@@ -365,6 +365,69 @@
 
     .to-top { position: fixed; left: 20px; bottom: 20px; z-index: 25; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .25s, transform .25s var(--ease); }
     .to-top.show { opacity: 1; transform: none; pointer-events: auto; }
+    /* =================== Barre latérale des services =================== */
+    .side-handle { position: fixed; left: 0; top: 50%; z-index: 35; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 7px; border: 1px solid var(--line); border-left: 0; border-radius: 0 14px 14px 0; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(10px); color: var(--muted); cursor: pointer; box-shadow: var(--shadow); font: inherit; transition: padding .25s var(--ease), color .2s, background .2s; }
+    .side-handle:hover { padding-left: 11px; color: var(--brand-ink); }
+    .side-handle:focus-visible { outline: none; box-shadow: var(--ring); }
+    .side-handle span { writing-mode: vertical-rl; transform: rotate(180deg); font-size: 11.5px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase; }
+    .side-handle .dots { display: flex; flex-direction: column; gap: 4px; }
+    .side-handle .dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--c); opacity: .9; }
+    .side-overlay { position: fixed; inset: 0; z-index: 44; background: rgba(8, 15, 30, .4); backdrop-filter: blur(2px); opacity: 0; pointer-events: none; transition: opacity .3s var(--ease); }
+    .side-overlay.open { opacity: 1; pointer-events: auto; }
+    .sidebar { position: fixed; top: 0; left: 0; bottom: 0; z-index: 45; width: min(330px, 88vw); display: flex; flex-direction: column; background: var(--surface); box-shadow: var(--shadow-lg); transform: translateX(-102%); transition: transform .4s var(--ease); }
+    .sidebar.open { transform: none; }
+    .side-head { padding: 18px 18px 16px; color: #fff; background: radial-gradient(400px 160px at 100% 0, rgba(15,159,135,.5), transparent 60%), linear-gradient(135deg, #0b2f6b, #0a2350); }
+    .side-head .row-h { display: flex; align-items: center; gap: 10px; }
+    .side-head img { width: 36px; height: 36px; }
+    .side-head b { display: block; font-size: 16px; }
+    .side-head small { color: #c5d4ee; font-size: 12px; }
+    .side-head .btn-icon { margin-left: auto; --c: #fff; background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.2); }
+    .side-head p { margin: 12px 0 0; font-size: 12.5px; color: #c5d4ee; }
+    .side-list { flex: 1; overflow-y: auto; padding: 14px; display: grid; gap: 8px; align-content: start; }
+    .svc { --c: var(--brand); position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 11px 12px; border: 1px solid var(--line); border-radius: 13px; text-decoration: none; color: var(--ink); background: var(--surface); transition: transform .2s var(--ease), border-color .2s, box-shadow .2s, background .2s; animation: rise .35s var(--ease) both; }
+    .svc:hover { transform: translateX(4px); border-color: color-mix(in srgb, var(--c) 45%, var(--line)); box-shadow: 0 6px 18px color-mix(in srgb, var(--c) 15%, transparent); }
+    .svc .s-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--c), color-mix(in srgb, var(--c) 60%, #000)); }
+    .svc .s-ico svg { width: 19px; height: 19px; }
+    .svc b { display: block; font-size: 13.5px; }
+    .svc small { display: block; color: var(--muted); font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .svc .s-url { font-family: ui-monospace, monospace; font-size: 11px; color: var(--faint); }
+    .svc .st { display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; color: var(--faint); white-space: nowrap; }
+    .svc .st::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .svc .st.on { color: var(--teal); }
+    .svc .st.off { color: var(--faint); }
+    .svc.current { background: linear-gradient(135deg, var(--brand-soft), var(--surface)); border-color: color-mix(in srgb, var(--brand) 40%, var(--line)); }
+    .svc.current::after { content: 'Vous êtes ici'; position: absolute; top: -8px; right: 12px; font-size: 10px; font-weight: 700; padding: 1px 8px; border-radius: 99px; background: var(--brand); color: #fff; }
+    .side-foot { padding: 12px 16px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: flex-start; }
+    .side-foot code { font-size: 11.5px; color: var(--brand-ink); }
+    @media (max-width: 560px) { .side-handle { top: auto; bottom: 74px; transform: none; } }
+
+    /* =================== Commentaires =================== */
+    .comments { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); animation: rise .3s var(--ease) both; }
+    .cm { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 8px 0; }
+    .cm + .cm { border-top: 1px solid var(--line); }
+    .avatar { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 800; background: var(--c, var(--brand)); flex: none; }
+    .cm .who { font-size: 12.5px; font-weight: 700; }
+    .cm .who small { font-weight: 500; color: var(--muted); margin-left: 6px; }
+    .cm .txt { font-size: 13px; margin-top: 2px; white-space: pre-line; word-break: break-word; }
+    .cm .btn-icon { opacity: 0; transition: opacity .2s; }
+    .cm:hover .btn-icon, .cm .btn-icon:focus-visible { opacity: 1; }
+    @media (hover: none) { .cm .btn-icon { opacity: 1; } }
+    .cm-form { display: flex; gap: 8px; margin-top: 10px; align-items: center; }
+    .cm-form input { flex: 1; }
+    .cm-empty { font-size: 12.5px; color: var(--muted); padding: 4px 0; }
+    .btn.cm-toggle.open { --b: var(--brand-soft); --c: var(--brand-ink); border-color: transparent; }
+    body.still .post, body.still .comments { animation: none; }
+
+    /* =================== Finitions =================== */
+    body { animation: pageIn .5s var(--ease) both; }
+    @keyframes pageIn { from { opacity: 0; } to { opacity: 1; } }
+    .brand img { filter: drop-shadow(0 4px 10px rgba(11, 58, 126, .25)); }
+    @media (hover: hover) { .card:hover { box-shadow: var(--shadow), 0 14px 34px rgba(15, 27, 51, .06); } }
+    .card-head h2 .badge { vertical-align: 2px; margin-left: 4px; }
+    ::-webkit-scrollbar { width: 11px; height: 11px; }
+    ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 99px; border: 3px solid var(--bg); }
+    ::-webkit-scrollbar-track { background: transparent; }
+
     /* =================== Pied de page =================== */
     body { display: flex; flex-direction: column; min-height: 100vh; }
     main { width: 100%; }
@@ -436,6 +499,11 @@
     <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></symbol>
     <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></symbol>
     <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-chat" viewBox="0 0 24 24"><path d="M21 12a8 8 0 0 1-11.6 7.1L3 21l1.9-6.4A8 8 0 1 1 21 12z"/></symbol>
+    <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
     <symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
     <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></symbol>
     <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
@@ -718,7 +786,7 @@
 
       <div class="f-col">
         <h4>Équipe WinL9it</h4>
-        <ul>
+        <ul id="f-team">
           <li><span><i class="dot"></i>User Service</span></li>
           <li><span><i class="dot"></i>Lost Item Service</span></li>
           <li><span><i class="dot"></i>Found Item Service</span></li>
@@ -737,6 +805,26 @@
       </div>
     </div>
   </footer>
+
+  <!-- Barre latérale : pages des autres microservices (le menu du haut reste inchangé) -->
+  <button class="side-handle" id="side-handle" type="button" title="Changer de service" aria-label="Ouvrir la liste des services" aria-controls="sidebar">
+    <svg class="i"><use href="#i-grid"/></svg>
+    <span>Services</span>
+    <span class="dots" id="side-dots"></span>
+  </button>
+  <div class="side-overlay" id="side-overlay"></div>
+  <aside class="sidebar" id="sidebar" aria-hidden="true" aria-label="Services WinL9it">
+    <div class="side-head">
+      <div class="row-h">
+        <img src="/logo.svg" alt="" />
+        <div><b>Plateforme WinL9it</b><small>Basculer vers un autre microservice</small></div>
+        <button class="btn btn-icon btn-sm" id="side-close" type="button" title="Fermer (Échap)" aria-label="Fermer"><svg class="i"><use href="#i-x"/></svg></button>
+      </div>
+      <p>Chaque membre de l'équipe a son microservice et sa propre interface.</p>
+    </div>
+    <nav class="side-list" id="side-list"></nav>
+    <div class="side-foot"><svg class="i"><use href="#i-info"/></svg><span>Le point vert indique un service démarré. Adresses modifiables dans <code>public/services.json</code>.</span></div>
+  </aside>
 
   <!-- Panneau de détail -->
   <div class="overlay" id="overlay"></div>
@@ -864,6 +952,42 @@
       try { await api('/health'); $('health').textContent = $('f-health').textContent = 'API en ligne'; $('health').className = 'health up'; $('f-health').style.opacity = 1; }
       catch { $('health').textContent = $('f-health').textContent = 'API hors ligne'; $('health').className = 'health down'; $('f-health').style.opacity = .6; }
     }
+    /* ---------- Barre latérale : basculer vers les pages des autres microservices ---------- */
+    function openSidebar() { $('sidebar').classList.add('open'); $('side-overlay').classList.add('open'); $('sidebar').setAttribute('aria-hidden', 'false'); pingServices(); }
+    function closeSidebar() { $('sidebar').classList.remove('open'); $('side-overlay').classList.remove('open'); $('sidebar').setAttribute('aria-hidden', 'true'); }
+    $('side-handle').addEventListener('click', openSidebar);
+    $('side-close').addEventListener('click', closeSidebar);
+    $('side-overlay').addEventListener('click', closeSidebar);
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && $('sidebar').classList.contains('open')) closeSidebar(); });
+    let SERVICES = [];
+    async function loadServices() {
+      try { SERVICES = (await fetch('/services.json').then((r) => r.json())).services || []; } catch { SERVICES = []; }
+      $('side-dots').innerHTML = SERVICES.map((s) => `<i style="--c:${esc(s.color)}"></i>`).join('');
+      $('side-list').innerHTML = SERVICES.map((s, i) => `
+        <a class="svc ${s.current ? 'current' : ''}" href="${s.current ? '#dashboard' : esc(s.url)}" data-svc="${esc(s.id)}" style="--c:${esc(s.color)};animation-delay:${i * 50}ms" ${s.current ? 'aria-current="page"' : ''}>
+          <span class="s-ico">${icon(s.icon)}</span>
+          <span style="min-width:0"><b>${esc(s.name)}</b><small>${esc(s.owner)}</small><span class="s-url">${esc(s.url.replace(/^https?:\/\//, ''))}</span></span>
+          <span class="st ${s.current ? 'on' : ''}" data-st="${esc(s.id)}">${s.current ? 'en ligne' : '…'}</span>
+        </a>`).join('');
+      if (SERVICES.length) $('f-team').innerHTML = SERVICES.map((s) => s.current
+        ? `<li><span class="me"><i class="dot"></i>${esc(s.name)} — ${esc(s.owner)}</span></li>`
+        : `<li><a href="${esc(s.url)}"><i class="dot"></i>${esc(s.name)}</a></li>`).join('');
+    }
+    // Un service est « en ligne » si son /health répond (mode no-cors : on teste seulement la connexion)
+    function pingServices() {
+      SERVICES.filter((s) => !s.current).forEach((s) => {
+        const el = document.querySelector(`[data-st="${s.id}"]`);
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 1500);
+        fetch(s.url.replace(/\/$/, '') + '/health', { mode: 'no-cors', signal: ctrl.signal, cache: 'no-store' })
+          .then(() => { el.textContent = 'en ligne'; el.className = 'st on'; })
+          .catch(() => { el.textContent = 'hors ligne'; el.className = 'st off'; el.closest('.svc').title = `${s.name} ne répond pas sur ${s.url}`; })
+          .finally(() => clearTimeout(timer));
+      });
+    }
+    $('side-list').addEventListener('click', (e) => { const a = e.target.closest('.svc.current'); if (a) closeSidebar(); });
+    loadServices();
+
     $('f-year').textContent = new Date().getFullYear();
     $('f-top').addEventListener('click', () => scrollTo({ top: 0 }));
 
@@ -1020,7 +1144,7 @@
       busy(e.submitter, async () => {
         try {
           const r = await api('/api/feedbacks', { method: 'POST', body: JSON.stringify({
-            matchId: id, userId: f.userId.value.trim(), isCorrect: f.isCorrect.value === 'true', rating: +f.rating.value }) });
+            matchId: id, userId: f.elements.userId.value.trim(), isCorrect: f.elements.isCorrect.value === 'true', rating: +f.elements.rating.value }) });
           toast(r.message, r.matchStatus !== 'REJETÉ');
           await searchById(id); refreshAll();
         } catch (err) { toast(err.message, false); }
@@ -1188,14 +1312,62 @@
         ${p.archivedReason && p.status === 'ARCHIVÉ' ? `<div class="hint">${icon('archive')}${esc(p.archivedReason)}</div>` : ''}
         <div class="post-foot">
           ${p.status === 'PUBLIÉ' ? `<button class="btn btn-sm like ${liked ? 'on' : ''}" data-pact="like" data-pid="${p._id}" title="J'aime (${esc(me())})">${icon('heart')}<span>${likes}</span></button>` : `<span class="meta-i">${icon('heart')}${likes}</span>`}
+          <button class="btn btn-sm btn-outline cm-toggle ${openComments.has(p._id) ? 'open' : ''}" data-pact="comments" data-pid="${p._id}" title="Commentaires" aria-expanded="${openComments.has(p._id)}">${icon('chat')}<span>${(p.comments || []).length}</span></button>
           <span class="meta-i">${icon('eye')}${p.views || 0}</span>
           <span class="spacer"></span>
           ${p.status === 'BROUILLON' ? `<button class="btn btn-sm btn-success" data-pact="publish" data-pid="${p._id}">${icon('send')}<span>Publier</span></button>` : ''}
           ${p.status !== 'ARCHIVÉ' ? `<button class="btn btn-sm btn-outline" data-pact="archive" data-pid="${p._id}">${icon('archive')}<span>Archiver</span></button>` : ''}
           <button class="btn btn-sm btn-soft-red btn-icon" data-pact="delete" data-pid="${p._id}" title="Supprimer" aria-label="Supprimer">${icon('trash')}</button>
         </div>
+        ${openComments.has(p._id) ? commentsBlock(p) : ''}
       </article>`;
     }
+
+    // ---- Commentaires d'une publication
+    const openComments = new Set();
+    const AVATAR_COLORS = ['#1d63e0', '#0f9f87', '#6d4ee6', '#e0475b', '#c27c06', '#0b3a7e'];
+    const avatar = (id) => {
+      const h = [...String(id)].reduce((a, c) => a + c.charCodeAt(0), 0);
+      const initials = String(id).replace(/[^A-Za-z0-9]/g, '').slice(-2).toUpperCase() || '?';
+      return `<span class="avatar" style="--c:${AVATAR_COLORS[h % AVATAR_COLORS.length]}">${esc(initials)}</span>`;
+    };
+    function timeAgo(d) {
+      const s = Math.max(0, (Date.now() - new Date(d)) / 1000);
+      if (s < 60) return 'à l\'instant';
+      if (s < 3600) return `il y a ${Math.floor(s / 60)} min`;
+      if (s < 86400) return `il y a ${Math.floor(s / 3600)} h`;
+      return new Date(d).toLocaleDateString('fr-FR');
+    }
+    function commentsBlock(p) {
+      const list = [...(p.comments || [])].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+      const canDelete = (c) => c.authorId === me() || p.authorId === me();
+      return `<div class="comments">
+        ${list.length ? list.map((c) => `
+          <div class="cm">
+            ${avatar(c.authorId)}
+            <div><div class="who">${esc(c.authorId)}${c.authorId === p.authorId ? ' <span class="badge count" style="font-size:10px">auteur</span>' : ''}<small>${timeAgo(c.createdAt)}</small></div><div class="txt">${esc(c.content)}</div></div>
+            ${canDelete(c) ? `<button class="btn btn-icon btn-sm btn-outline" data-cdel="${c._id}" data-pid="${p._id}" title="Supprimer le commentaire" aria-label="Supprimer le commentaire">${icon('x')}</button>` : '<span></span>'}
+          </div>`).join('') : '<div class="cm-empty">Aucun commentaire pour le moment.</div>'}
+        ${p.status === 'PUBLIÉ' ? `
+        <form class="cm-form" data-pid="${p._id}" autocomplete="off">
+          ${avatar(me())}
+          <input name="content" maxlength="500" required placeholder="Écrire un commentaire en tant que ${esc(me())}…" aria-label="Commentaire" />
+          <button class="btn btn-primary btn-sm" type="submit">${icon('send')}<span>Envoyer</span></button>
+        </form>` : `<div class="hint">${icon('info')}Seule une publication publiée peut être commentée.</div>`}
+      </div>`;
+    }
+    document.addEventListener('submit', (e) => {
+      if (!e.target.classList.contains('cm-form')) return;
+      e.preventDefault();
+      const f = e.target, pid = f.dataset.pid;
+      busy(e.submitter, async () => {
+        try {
+          await api(`/api/posts/${pid}/comments`, { method: 'POST', body: JSON.stringify({ authorId: me(), content: f.elements.content.value.trim() }) });
+          await refreshPosts(true);
+          const i = document.querySelector(`.cm-form[data-pid="${pid}"] input`); if (i) i.focus({ preventScroll: true });
+        } catch (err) { toast(err.message, false); }
+      });
+    });
     const emptyPosts = (txt) => `<div class="empty">${icon('mega')}<b>Aucune publication</b>${txt}</div>`;
     async function loadPosts() {
       try {
@@ -1205,7 +1377,7 @@
         ]);
         const s = stats.data;
         $('post-count').textContent = s.total;
-        $('post-sub').textContent = `${s.parStatut['PUBLIÉ']} publiée(s) · ${s.parStatut['BROUILLON']} brouillon(s) · ${s.parStatut['ARCHIVÉ']} archivée(s) · ${s.totalLikes} j'aime · ${s.totalVues} vues`;
+        $('post-sub').textContent = `${s.parStatut['PUBLIÉ']} publiée(s) · ${s.parStatut['BROUILLON']} brouillon(s) · ${s.parStatut['ARCHIVÉ']} archivée(s) · ${s.totalLikes} j'aime · ${s.totalCommentaires} commentaire(s) · ${s.totalVues} vues`;
         $('posts').innerHTML = list.data.length ? list.data.map(postCard).join('')
           : emptyPosts(postFilter === 'feed' ? 'Publiez une correspondance confirmée depuis son panneau de détail.' : 'Rien dans cette catégorie.');
       } catch (err) { $('posts').innerHTML = emptyPosts(esc(err.message)); }
@@ -1224,7 +1396,12 @@
           <div class="hint">${icon('info')}Seule une correspondance CONFIRMÉ ou RESTITUÉ peut être publiée.</div>`}`;
       } catch (err) { $('mposts-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
     }
-    const refreshPosts = () => { loadPosts(); if (currentMatch && $('drawer').classList.contains('open')) loadMatchPosts(currentMatch); };
+    // still = true : ré-affichage sans animation d'apparition (ouvrir les commentaires, commenter…)
+    const refreshPosts = (still = false) => {
+      document.body.classList.toggle('still', still);
+      return Promise.all([loadPosts(), currentMatch && $('drawer').classList.contains('open') ? loadMatchPosts(currentMatch) : null])
+        .finally(() => setTimeout(() => document.body.classList.remove('still'), 50));
+    };
     document.querySelectorAll('#post-filter button').forEach((b) => b.addEventListener('click', () => {
       document.querySelectorAll('#post-filter button').forEach((x) => x.classList.toggle('active', x === b));
       postFilter = b.dataset.pf; loadPosts();
@@ -1232,7 +1409,8 @@
     $('me').addEventListener('change', loadPosts);
     const showPostForm = (show, matchId) => {
       $('post-form').hidden = !show;
-      if (show) { if (matchId) $('post-form').matchId.value = matchId; $('post-form').title.focus({ preventScroll: true }); }
+      const el = $('post-form').elements;
+      if (show) { if (matchId) el.matchId.value = matchId; el.title.focus({ preventScroll: true }); }
     };
     $('post-new-btn').addEventListener('click', () => showPostForm($('post-form').hidden));
     $('post-cancel').addEventListener('click', () => { $('post-form').reset(); showPostForm(false); });
@@ -1242,17 +1420,30 @@
       busy(e.submitter, async () => {
         try {
           const r = await api('/api/posts', { method: 'POST', body: JSON.stringify({
-            matchId: f.matchId.value.trim(), authorId: f.authorId.value.trim(), title: f.title.value.trim(), content: f.content.value.trim(),
-            tags: f.tags.value.split(',').map((t) => t.trim()).filter(Boolean) }) });
-          toast(r.message); f.reset(); f.authorId.value = me(); showPostForm(false);
+            matchId: f.elements.matchId.value.trim(), authorId: f.elements.authorId.value.trim(), title: f.elements.title.value.trim(),
+            content: f.elements.content.value.trim(), tags: f.elements.tags.value.split(',').map((t) => t.trim()).filter(Boolean) }) });
+          toast(r.message); f.reset(); f.elements.authorId.value = me(); showPostForm(false);
           postFilter = ''; document.querySelectorAll('#post-filter button').forEach((x) => x.classList.toggle('active', x.dataset.pf === ''));
           refreshPosts();
         } catch (err) { toast(err.message, false); }
       });
     });
     document.addEventListener('click', async (e) => {
-      const t = e.target.closest('[data-pact],[data-gen],[data-newpost]');
+      const t = e.target.closest('[data-pact],[data-gen],[data-newpost],[data-cdel]');
       if (!t) return;
+      if (t.dataset.pact === 'comments') {
+        const id = t.dataset.pid;
+        openComments.has(id) ? openComments.delete(id) : openComments.add(id);
+        await refreshPosts(true);
+        if (openComments.has(id)) { const i = document.querySelector(`.cm-form[data-pid="${id}"] input`); if (i) i.focus({ preventScroll: true }); }
+        return;
+      }
+      if (t.dataset.cdel) {
+        return busy(t, async () => {
+          try { await api(`/api/posts/${t.dataset.pid}/comments/${t.dataset.cdel}?authorId=${encodeURIComponent(me())}`, { method: 'DELETE' }); refreshPosts(true); }
+          catch (err) { toast(err.message, false); }
+        });
+      }
       if (t.dataset.newpost) { closeDrawer(); showPostForm(true, t.dataset.newpost); $('publications').scrollIntoView(); return; }
       if (t.dataset.gen) {
         return busy(t, async () => {
@@ -1270,7 +1461,7 @@
             : act === 'delete' ? await api(`/api/posts/${id}`, { method: 'DELETE' })
             : await api(`/api/posts/${id}/${act}`, { method: 'PATCH', body: '{}' });
           if (act !== 'like') toast(r.message);
-          refreshPosts();
+          refreshPosts(act === 'like');
         } catch (err) { toast(err.message, false); }
       });
     });
@@ -1319,6 +1510,7 @@
     const qs = new URLSearchParams(location.search);
     if (qs.get('tab') === 'auto') switchTab('auto');
     if (qs.get('id')) searchById(qs.get('id'));
+    if (qs.has('services')) setTimeout(openSidebar, 300);
   </script>
 </body>
 </html>

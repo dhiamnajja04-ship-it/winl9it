@@ -109,6 +109,11 @@ const check = (ok, label, detail = '') => {
   check(!activeOnRejected.length, 'les publications d\'une correspondance rejetée sont archivées');
   check(posts.every((p) => new Set(p.likes).size === p.likes.length), 'un seul « j\'aime » par utilisateur et par publication');
   check(posts.every((p) => p.views >= 0), 'compteurs de vues positifs');
+  const allComments = posts.flatMap((p) => (p.comments || []).map((c) => ({ ...c, post: p })));
+  console.log(`   ↳ ${allComments.length} commentaire(s)`);
+  check(allComments.every((c) => c.authorId && c.content && c.content.length <= 500), 'commentaires valides (auteur, texte non vide, ≤ 500 caractères)');
+  check(posts.every((p) => p.status !== 'BROUILLON' || !(p.comments || []).length), 'aucun commentaire sur un brouillon');
+  check(allComments.every((c) => !c.post.publishedAt || new Date(c.createdAt) >= new Date(c.post.publishedAt)), 'chaque commentaire est postérieur à la publication');
 
   // ---------- Cohérence avec l'API (agrégations MongoDB) ----------
   const agg = await Match.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]);

@@ -178,9 +178,22 @@ const FEEDBACKS = [
   for (const [key, n] of [['iphone', 9], ['sac', 6], ['montre', 3], ['carte', 4], ['pc', 2]]) {
     for (let i = 0; i < n; i++) await call('GET', `/posts/${postIds[key]}`);
   }
+  // Commentaires
+  const COMMENTS = {
+    iphone: [['USER-014', 'Super, merci à la personne qui l\'a rapporté !'], ['USER-001', 'Récupéré à l\'accueil ce matin, merci WinL9it 🙏'], ['USER-021', 'Le matching automatique est vraiment efficace.']],
+    sac: [['USER-011', 'Heureux que le sac ait retrouvé son propriétaire.'], ['USER-002', 'Merci à tous pour vos messages !']],
+    carte: [['USER-009', 'Pensez à passer au bureau des étudiants avec une pièce d\'identité.']],
+  };
+  let nbComments = 0;
+  for (const [key, list] of Object.entries(COMMENTS)) {
+    for (const [authorId, content] of list) {
+      const r = await call('POST', `/posts/${postIds[key]}/comments`, { authorId, content });
+      if (r.status === 201) nbComments++;
+    }
+  }
   await call('PATCH', `/posts/${postIds.pc}/archive`, { reason: 'Ordinateur déjà récupéré au secrétariat' });
   const { body: pstats } = await call('GET', '/posts/stats');
-  console.log(`📣 publications : ${JSON.stringify(pstats.data.parStatut)} · ${pstats.data.totalLikes} j'aime · ${pstats.data.totalVues} vues`);
+  console.log(`📣 publications : ${JSON.stringify(pstats.data.parStatut)} · ${pstats.data.totalLikes} j'aime · ${nbComments} commentaire(s) · ${pstats.data.totalVues} vues`);
 
   const { body: stats } = await call('GET', '/matches/stats');
   console.log(`\n📦 ${created} correspondance(s) créée(s), ${skipped} déjà présente(s), ${fbOk} avis ajouté(s)`);

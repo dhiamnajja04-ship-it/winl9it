@@ -1,15 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" role="img" aria-label="WinL9it — Matching Service">
   <defs>
     <linearGradient id="wl-bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#0b3a7e"/>
+      <stop offset="0" stop-color="#0d3f8c"/>
+      <stop offset=".55" stop-color="#0b4f86"/>
       <stop offset="1" stop-color="#12a58c"/>
+    </linearGradient>
+    <linearGradient id="wl-gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity=".28"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="wl-core" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#22c4a6"/>
+      <stop offset="1" stop-color="#0d8f79"/>
     </linearGradient>
   </defs>
   <g transform="translate(4 4)">
     <rect width="64" height="64" rx="16" fill="url(#wl-bg)"/>
-    <path d="M12 21a21 21 0 0 1 9-11M52 21a21 21 0 0 0-9-11" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M16 0h32a16 16 0 0 1 16 16v6C48 30 16 30 0 22v-6A16 16 0 0 1 16 0z" fill="url(#wl-gloss)"/>
+    <path d="M13.5 22a20 20 0 0 1 7.5-11.5M50.5 22a20 20 0 0 0-7.5-11.5" fill="none" stroke="#ffffff" stroke-opacity=".45" stroke-width="2.6" stroke-linecap="round"/>
+    <path d="M8 23a26 26 0 0 1 9-16M56 23a26 26 0 0 0-9-16" fill="none" stroke="#ffffff" stroke-opacity=".2" stroke-width="2.2" stroke-linecap="round"/>
+    <ellipse cx="32" cy="56.5" rx="7" ry="1.8" fill="#04203f" fill-opacity=".35"/>
     <path d="M32 55s-15-14.2-15-27a15 15 0 0 1 30 0c0 12.8-15 27-15 27z" fill="#ffffff"/>
-    <circle cx="32" cy="28" r="9.5" fill="#12a58c"/>
+    <circle cx="32" cy="28" r="9.5" fill="url(#wl-core)"/>
     <path d="M27.4 28.3l3.2 3.2 6.2-6.6" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
   </g>
   <text x="84" y="42" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="-1" fill="#0b3a7e">Win<tspan fill="#12a58c">L9it</tspan></text>

@@ -12,7 +12,11 @@ const pick = (body, keys = ALLOWED) =>
 const PUBLISHABLE = ['CONFIRMÉ', 'RESTITUÉ'];
 const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const notFound = (res) => res.status(404).json({ success: false, message: 'Publication introuvable' });
-const withCount = (p) => ({ ...(p.toObject ? p.toObject() : p), likesCount: (p.likes || []).length });
+const withCount = (p) => ({
+  ...(p.toObject ? p.toObject() : p),
+  likesCount: (p.likes || []).length,
+  commentsCount: (p.comments || []).length,
+});
 
 async function findMatch(matchId) {
   if (!mongoose.Types.ObjectId.isValid(matchId)) return { error: [400, `matchId invalide : ${matchId}`] };
@@ -185,15 +189,85 @@ exports.toggleLike = async (req, res, next) => {
   }
 };
 
+/** GET /api/posts/:id/comments — Commentaires d'une publication (du plus ancien au plus récent) */
+exports.getComments = async (req, res, next) => {
+  try {
+    const post = await Post.findById(req.params.id).select('comments status');
+    if (!post) return notFound(res);
+    const comments = [...post.comments].sort((a, b) => a.createdAt - b.createdAt);
+    res.json({ success: true, count: comments.length, data: comments });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** POST /api/posts/:id/comments — Commenter une publication (publiée uniquement) */
+exports.addComment = async (req, res, next) => {
+  try {
+    const authorId = String((req.body && req.body.authorId) || '').trim();
+    const content = String((req.body && req.body.content) || '').trim();
+    const errors = [];
+    if (!authorId) errors.push('authorId est obligatoire');
+    if (!content) errors.push('Le commentaire est vide');
+    if (content.length > 500) errors.push('Commentaire trop long (500 caractères max)');
+    if (errors.length) return res.status(400).json({ success: false, message: 'Données invalides', errors });
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return notFound(res);
+    if (post.status !== 'PUBLIÉ') {
+      return res.status(409).json({ success: false, message: 'Seule une publication publiée peut être commentée' });
+    }
+    // Anti-doublon : le même auteur ne peut pas envoyer deux fois de suite le même commentaire
+    const last = post.comments[post.comments.length - 1];
+    if (last && last.authorId === authorId && last.content === content) {
+      return res.status(409).json({ success: false, message: 'Commentaire identique déjà envoyé' });
+    }
+    post.comments.push({ authorId, content });
+    await post.save();
+    const comment = post.comments[post.comments.length - 1];
+    res.status(201).json({ success: true, message: 'Commentaire ajouté', data: comment, commentsCount: post.comments.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * DELETE /api/posts/:id/comments/:commentId?authorId=… — Supprimer un commentaire
+ * Autorisé à l'auteur du commentaire ou à l'auteur de la publication (403 sinon).
+ */
+exports.deleteComment = async (req, res, next) => {
+  try {
+    const { commentId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(commentId)) {
+      return res.status(400).json({ success: false, message: `Id invalide : ${commentId}` });
+    }
+    const requester = String(req.query.authorId || (req.body && req.body.authorId) || '').trim();
+    if (!requester) return res.status(400).json({ success: false, message: 'authorId est obligatoire' });
+
+    const post = await Post.findById(req.params.id);
+    if (!post) return notFound(res);
+    const comment = post.comments.id(commentId);
+    if (!comment) return res.status(404).json({ success: false, message: 'Commentaire introuvable' });
+    if (requester !== comment.authorId && requester !== post.authorId) {
+      return res.status(403).json({ success: false, message: 'Seul l\'auteur du commentaire ou de la publication peut le supprimer' });
+    }
+    comment.deleteOne();
+    await post.save();
+    res.json({ success: true, message: 'Commentaire supprimé', data: { id: commentId }, commentsCount: post.comments.length });
+  } catch (err) {
+    next(err);
+  }
+};
+
 /** GET /api/posts/feed — Fil des publications publiées, classées par popularité */
 exports.getFeed = async (req, res, next) => {
   try {
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 10, 1), 50);
     const posts = await Post.aggregate([
       { $match: { status: 'PUBLIÉ' } },
-      { $addFields: { likesCount: { $size: '$likes' } } },
-      // Popularité : un « j'aime » vaut 3 vues
-      { $addFields: { popularite: { $add: [{ $multiply: ['$likesCount', 3] }, '$views'] } } },
+      { $addFields: { likesCount: { $size: '$likes' }, commentsCount: { $size: { $ifNull: ['$comments', []] } } } },
+      // Popularité : un « j'aime » vaut 3 vues, un commentaire vaut 2 vues
+      { $addFields: { popularite: { $add: [{ $multiply: ['$likesCount', 3] }, { $multiply: ['$commentsCount', 2] }, '$views'] } } },
       { $sort: { popularite: -1, publishedAt: -1 } },
       { $limit: limit },
       { $lookup: { from: Match.collection.name, localField: 'matchId', foreignField: '_id', as: 'match' } },
@@ -259,7 +333,10 @@ exports.getStats = async (req, res, next) => {
   try {
     const [byStatus, [totals = {}], top] = await Promise.all([
       Post.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]),
-      Post.aggregate([{ $group: { _id: null, total: { $sum: 1 }, likes: { $sum: { $size: '$likes' } }, vues: { $sum: '$views' } } }]),
+      Post.aggregate([{ $group: {
+        _id: null, total: { $sum: 1 }, likes: { $sum: { $size: '$likes' } }, vues: { $sum: '$views' },
+        commentaires: { $sum: { $size: { $ifNull: ['$comments', []] } } },
+      } }]),
       Post.aggregate([
         { $match: { status: 'PUBLIÉ' } },
         { $addFields: { likesCount: { $size: '$likes' } } },
@@ -272,7 +349,10 @@ exports.getStats = async (req, res, next) => {
     byStatus.forEach((s) => (parStatut[s._id] = s.n));
     res.json({
       success: true,
-      data: { total: totals.total || 0, parStatut, totalLikes: totals.likes || 0, totalVues: totals.vues || 0, top },
+      data: {
+        total: totals.total || 0, parStatut, totalLikes: totals.likes || 0, totalVues: totals.vues || 0,
+        totalCommentaires: totals.commentaires || 0, top,
+      },
     });
   } catch (err) {
     next(err);

@@ -173,6 +173,23 @@
         "responses": { "200": { "description": "liked, likesCount" }, "400": { "description": "userId manquant" }, "409": { "description": "Publication non publiée" } }
       }
     },
+    "/api/posts/{id}/comments": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "tags": ["Posts — Métier"], "summary": "Lister les commentaires d'une publication (du plus ancien au plus récent)", "responses": { "200": { "description": "Commentaires" }, "404": { "description": "Publication introuvable" } } },
+      "post": {
+        "tags": ["Posts — Métier"], "summary": "Commenter une publication (PUBLIÉ uniquement ; anti-doublon)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["authorId", "content"], "properties": { "authorId": { "type": "string", "example": "USER-001" }, "content": { "type": "string", "maxLength": 500, "example": "C'est peut-être ma carte !" } } } } } },
+        "responses": { "201": { "description": "Commentaire ajouté (commentsCount)" }, "400": { "description": "Auteur ou texte manquant" }, "409": { "description": "Publication non publiée, ou commentaire identique déjà envoyé" } }
+      }
+    },
+    "/api/posts/{id}/comments/{commentId}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "commentId", "in": "path", "required": true, "schema": { "type": "string" } },
+        { "name": "authorId", "in": "query", "required": true, "description": "Utilisateur qui supprime", "schema": { "type": "string" } }
+      ],
+      "delete": { "tags": ["Posts — Métier"], "summary": "Supprimer un commentaire (auteur du commentaire ou de la publication)", "responses": { "200": { "description": "Supprimé" }, "403": { "description": "Non autorisé" }, "404": { "description": "Commentaire introuvable" } } }
+    },
     "/api/posts/feed": {
       "get": {
         "tags": ["Posts — Métier"], "summary": "Fil des publications PUBLIÉ classées par popularité (j'aime × 3 + vues), avec leur correspondance",

@@ -42,7 +42,7 @@ retrouvé (Found Item Service). Les objets sont référencés par leur id (`lost
 |---|---|---|
 | **Match** | `/api/matches` (POST, GET, GET :id, PUT, DELETE) — liste avec recherche `q`, tri `sort`, pagination `page`/`limit` | Score sur 4 critères (catégorie 30 %, description 30 %, lieu 20 %, date 20 %) · **matching automatique** (`POST /auto` : le serveur calcule les critères depuis les descriptions, la distance GPS et les dates) · cycle de vie `PROPOSÉ → CONFIRMÉ → RESTITUÉ` / `REJETÉ` (`PATCH /:id/status`) · **historique des statuts** (`/:id/history`) · confirmer rejette les propositions concurrentes · suggestions par objet perdu · tableau de bord (`/stats`) |
 | **MatchFeedback** | `/api/feedbacks` (POST, GET, GET :id, PUT, DELETE) | 1 avis par utilisateur et par correspondance · rejet automatique si ≥ 3 avis et < 50 % positifs · fiabilité d'une correspondance (`/stats/:matchId`) · précision globale (`/stats`) |
-| **Post** | `/api/posts` (POST, GET, GET :id, PUT, DELETE) — filtres `matchId`, `status`, `tag`, recherche `q`, pagination | Publication d'une correspondance · cycle `BROUILLON → PUBLIÉ → ARCHIVÉ` (`PATCH /:id/publish`, `/:id/archive`) · publication réservée aux correspondances confirmées / restituées · j'aime (`POST /:id/like`) et vues · fil par popularité (`/feed`) · **génération automatique** depuis une correspondance (`POST /from-match/:matchId`) · statistiques (`/stats`) · archivage automatique si la correspondance est rejetée |
+| **Post** | `/api/posts` (POST, GET, GET :id, PUT, DELETE) — filtres `matchId`, `status`, `tag`, recherche `q`, pagination | Publication d'une correspondance · cycle `BROUILLON → PUBLIÉ → ARCHIVÉ` (`PATCH /:id/publish`, `/:id/archive`) · publication réservée aux correspondances confirmées / restituées · j'aime (`POST /:id/like`), **commentaires** (`/:id/comments`) et vues · fil par popularité (`/feed`) · **génération automatique** depuis une correspondance (`POST /from-match/:matchId`) · statistiques (`/stats`) · archivage automatique si la correspondance est rejetée |
 
 **Lancer**
 
@@ -65,7 +65,11 @@ npm run dev
 npx newman run postman/WinL9it-Matching-Service.postman_collection.json -e postman/WinL9it-Local.postman_environment.json
 ```
 
-→ 90 requêtes, 146 assertions (CRUD + métier des 3 entités).
+→ 107 requêtes, 172 assertions (CRUD + métier des 3 entités).
+
+L'interface a une barre latérale « Services » qui mène aux pages des autres membres : les adresses
+sont dans `matching-service/public/services.json` (User 3001, Lost Item 3002, Found Item 3003,
+Matching 3004, Vérification 3005). **Prévenez Dhia si votre service utilise un autre port.**
 
 **Pour les autres services** : le Matching Service attend les ids d'objets fournis par
 Lost Item Service et Found Item Service, et un `userId` du User Service pour les avis, les auteurs

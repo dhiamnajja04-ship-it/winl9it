@@ -67,7 +67,8 @@ Exemple (`postman/` → « Match — Nouvelles API ») : iPhone perdu / trouvé 
 ### Entité 3 — Post (publication)
 
 Publication liée à une correspondance : `matchId`, `authorId`, `title`, `content`, `tags`,
-`status` (`BROUILLON` → `PUBLIÉ` → `ARCHIVÉ`), `likes`, `views`, `publishedAt`, `archivedReason`.
+`status` (`BROUILLON` → `PUBLIÉ` → `ARCHIVÉ`), `likes`, `views`, `publishedAt`, `archivedReason`,
+`comments` (sous-documents : `authorId`, `content`, `createdAt`).
 CRUD : `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` sur `/api/posts` (filtres `matchId`, `status`, `authorId`, `tag`, `q`, pagination).
 
 | Règle / fonctionnalité | Endpoint |
@@ -79,14 +80,20 @@ CRUD : `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` sur `/api/posts` (fi
 | **Vues** : consulter une publication publiée incrémente son compteur | `GET /api/posts/:id` |
 | **Fil** des publications classées par popularité (j'aime × 3 + vues), avec leur correspondance | `GET /api/posts/feed` |
 | **Génération automatique** du titre, du contenu et des tags à partir d'une correspondance (`?publish=true`) | `POST /api/posts/from-match/:matchId` |
-| **Statistiques** : total, par statut, j'aime, vues, top 3 | `GET /api/posts/stats` |
+| **Commentaires** : commenter une publication `PUBLIÉ` (anti-doublon), lister, supprimer (auteur du commentaire ou de la publication, `403` sinon) | `GET` · `POST /api/posts/:id/comments` · `DELETE /api/posts/:id/comments/:commentId?authorId=` |
+| **Statistiques** : total, par statut, j'aime, commentaires, vues, top 3 | `GET /api/posts/stats` |
 | **Archivage automatique** quand la correspondance est rejetée (manuellement, par concurrence ou par les avis) ; **suppression en cascade** avec la correspondance | — |
 
 Dans l'interface web : tableau de bord en haut, carte **Matching automatique** (Calculer le score / Créer),
 liste avec **recherche, tri et pagination**, et dans le détail d'une correspondance (Rechercher par id)
 les boutons **Confirmer / Rejeter / Marquer restitué**, l'**historique des statuts**, la zone **Avis des utilisateurs**
 et ses **Publications** (« Générer et publier », « Rédiger »). La section **Publications** affiche le fil
-(j'aime, vues), les brouillons et les archivées.
+(j'aime, commentaires, vues), les brouillons et les archivées.
+
+**Barre latérale « Services »** (onglet sur le bord gauche, le menu du haut est inchangé) : bascule vers
+les pages des autres microservices de l'équipe, avec un indicateur en ligne / hors ligne.
+Les adresses sont dans [`public/services.json`](public/services.json) (ports 3001 à 3005 par défaut,
+à adapter si un membre utilise un autre port). Lien direct : `http://localhost:3004/?services`.
 
 ## Technologies (slide 8)
 
@@ -161,10 +168,11 @@ npm run check-db          # vérifie l'intégrité des données directement dans
 | POST | `/api/posts/:id/like` | Métier — j'aime |
 | GET | `/api/posts/feed` · `/api/posts/stats` | Métier — fil, statistiques |
 | POST | `/api/posts/from-match/:matchId` | Métier — génération automatique |
+| GET / POST · DELETE | `/api/posts/:id/comments` · `/api/posts/:id/comments/:commentId` | Métier — commentaires |
 
-La collection Postman contient 8 dossiers (Health, CRUD Match, CRUD MatchFeedback,
-Match — Métier, MatchFeedback — Métier, Match — Nouvelles API, Post (Entité 3), Post — Métier) :
-**90 requêtes, 146 assertions**.
+La collection Postman contient 9 dossiers (Health, CRUD Match, CRUD MatchFeedback,
+Match — Métier, MatchFeedback — Métier, Match — Nouvelles API, Post (Entité 3), Post — Métier,
+Post — Commentaires) : **107 requêtes, 172 assertions**.
 
 Exemple de corps pour l'ajout :
 ```json

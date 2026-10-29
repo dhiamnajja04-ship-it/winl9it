@@ -22,6 +22,19 @@ const postSchema = new mongoose.Schema(
     views: { type: Number, default: 0, min: 0 },
     publishedAt: { type: Date, default: null },
     archivedReason: { type: String, trim: true },
+    // Commentaires des utilisateurs (sous-documents : chacun a son propre _id)
+    comments: [
+      {
+        authorId: { type: String, required: [true, 'authorId est obligatoire'], trim: true },
+        content: {
+          type: String,
+          required: [true, 'Le commentaire est vide'],
+          trim: true,
+          maxlength: [500, 'Commentaire trop long (500 caractères max)'],
+        },
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );

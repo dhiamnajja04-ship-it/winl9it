@@ -1,0 +1,10 @@
+{
+  "_info": "Pages des microservices WinL9it affichées dans la barre latérale. Modifier « url » si un membre utilise un autre port.",
+  "services": [
+    { "id": "user", "name": "User Service", "owner": "Adem Nekaies", "url": "http://localhost:3001", "icon": "user", "color": "#1d63e0" },
+    { "id": "lost", "name": "Lost Item Service", "owner": "Feres Ajili", "url": "http://localhost:3002", "icon": "pin", "color": "#e0475b" },
+    { "id": "found", "name": "Found Item Service", "owner": "Aymen Manai", "url": "http://localhost:3003", "icon": "box", "color": "#0f9f87" },
+    { "id": "matching", "name": "Matching Service", "owner": "Dhia Eddine Mnajja", "url": "http://localhost:3004", "icon": "target", "color": "#0b3a7e", "current": true },
+    { "id": "verification", "name": "Vérification Service", "owner": "Yassine Ghali", "url": "http://localhost:3005", "icon": "shield", "color": "#6d4ee6" }
+  ]
+}
