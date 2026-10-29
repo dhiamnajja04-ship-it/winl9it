@@ -10,3 +10,85 @@ Architecture microservices : Node.js · Express · MongoDB · RabbitMQ · Docker
 | Aymen Manai | Found Item Service | |
 | Dhia Mnajja | Matching Service | `matching-service` |
 | Yassine Ghali | Vérification Service | |
+
+## Organisation du dépôt
+
+- Chaque membre travaille **dans son propre dossier** (ex. `matching-service/`) et sur **sa propre branche**.
+- `main` contient la version commune : on y fusionne une branche quand le service est terminé et testé.
+- Ne jamais modifier le dossier d'un autre membre, ne jamais faire `git push --force`.
+- Chaque service a son propre `README.md`, sa propre base MongoDB et son propre port.
+- Ne pas committer `node_modules/` ni `.env` (déjà dans `.gitignore`) : fournir un `.env.example`.
+
+## Prérequis communs
+
+- **Node.js 18+** et npm
+- **MongoDB** en local sur `localhost:27017` (service Windows « MongoDB »)
+- **Postman** (ou `npx newman`) pour les tests
+
+---
+
+## Matching Service — Dhia Mnajja
+
+Dossier : [`matching-service/`](matching-service/) · Branche : `matching-service` · Port : **3004**
+· Base : `winl9it_matching_db` · Détails complets : [matching-service/README.md](matching-service/README.md)
+
+Rôle : gérer les **correspondances** entre un objet perdu (Lost Item Service) et un objet
+retrouvé (Found Item Service). Les objets sont référencés par leur id (`lostItemId`,
+`foundItemId`) : le service ne lit pas les bases des autres.
+
+**Entités**
+
+| Entité | CRUD | Métier |
+|---|---|---|
+| **Match** | `/api/matches` (POST, GET, GET :id, PUT, DELETE) | Score sur 4 critères (catégorie 30 %, description 30 %, lieu 20 %, date 20 %) · cycle de vie `PROPOSÉ → CONFIRMÉ → RESTITUÉ` / `REJETÉ` (`PATCH /:id/status`) · confirmer rejette les propositions concurrentes · suggestions par objet perdu · tableau de bord (`/stats`) |
+| **MatchFeedback** | `/api/feedbacks` (POST, GET, GET :id, PUT, DELETE) | 1 avis par utilisateur et par correspondance · rejet automatique si ≥ 3 avis et < 50 % positifs · fiabilité d'une correspondance (`/stats/:matchId`) · précision globale (`/stats`) |
+
+**Lancer**
+
+```bash
+cd matching-service
+npm install
+copy .env.example .env     # PORT=3004, MONGO_URI=mongodb://localhost:27017/winl9it_matching_db
+npm run dev
+```
+
+| URL | Rôle |
+|---|---|
+| http://localhost:3004 | Interface web (ajout, recherche par id, modification, suppression, tableau de bord, avis) |
+| http://localhost:3004/api-docs | Swagger |
+| http://localhost:3004/health | Health check |
+
+**Tester** — collection et environnement dans `matching-service/postman/` (environnement « WinL9it - Local ») :
+
+```bash
+npx newman run postman/WinL9it-Matching-Service.postman_collection.json -e postman/WinL9it-Local.postman_environment.json
+```
+
+→ 38 requêtes, 58 assertions (CRUD + métier des 2 entités).
+
+**Pour les autres services** : le Matching Service attend les ids d'objets fournis par
+Lost Item Service et Found Item Service, et un `userId` du User Service pour les avis.
+
+---
+
+## User Service — Adem Nekaies
+
+> _À compléter par Adem : dossier, branche, port, base, entités (CRUD + métier), commandes pour lancer et tester._
+
+---
+
+## Lost Item Service — Feres Ajili
+
+> _À compléter par Feres : dossier, branche, port, base, entités (CRUD + métier), commandes pour lancer et tester._
+
+---
+
+## Found Item Service — Aymen Manai
+
+> _À compléter par Aymen : dossier, branche, port, base, entités (CRUD + métier), commandes pour lancer et tester._
+
+---
+
+## Vérification Service — Yassine Ghali
+
+> _À compléter par Yassine : dossier, branche, port, base, entités (CRUD + métier), commandes pour lancer et tester._
