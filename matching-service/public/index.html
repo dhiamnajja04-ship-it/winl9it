@@ -311,6 +311,30 @@
     .auto-card { border: 1px solid color-mix(in srgb, var(--teal) 35%, var(--line)); border-radius: 14px; padding: 16px; background: linear-gradient(180deg, var(--teal-soft), var(--surface) 75%); animation: rise .45s var(--ease) both; }
     .auto-card .top { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
 
+    /* =================== Publications =================== */
+    .card-head .ico.violet { background: var(--violet-soft); color: var(--violet); }
+    .seg { display: inline-flex; gap: 2px; background: var(--surface-2); border: 1px solid var(--line); padding: 3px; border-radius: 10px; flex-wrap: wrap; }
+    .seg button { border: 0; background: none; font: inherit; font-weight: 600; font-size: 12.5px; color: var(--muted); padding: 6px 11px; border-radius: 8px; cursor: pointer; transition: background .2s, color .2s; }
+    .seg button.active { background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm), 0 0 0 1px var(--line); }
+    .toolbar .seg + .search-field { margin-left: auto; }
+    .posts { display: grid; gap: 12px; }
+    .post { border: 1px solid var(--line); border-radius: 14px; padding: 14px 16px; background: var(--surface); animation: rise .4s var(--ease) both; transition: border-color .2s, box-shadow .2s; }
+    .post:hover { border-color: var(--line-2); box-shadow: 0 6px 18px rgba(15, 27, 51, .06); }
+    .post.archived { opacity: .72; }
+    .post-top { display: flex; align-items: flex-start; gap: 10px; }
+    .post h3 { margin: 0; font-size: 14.5px; letter-spacing: -.2px; }
+    .post .by { font-size: 12px; color: var(--muted); margin-top: 2px; }
+    .post .by a { color: var(--brand-ink); cursor: pointer; text-decoration: none; }
+    .post p { margin: 8px 0 0; white-space: pre-line; font-size: 13px; color: var(--ink); }
+    .post .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+    .post .tag { font-size: 11.5px; color: var(--violet); background: var(--violet-soft); padding: 2px 8px; border-radius: 99px; }
+    .post-foot { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+    .post-foot .meta-i { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted); }
+    .like.on { --b: var(--danger-soft); --c: var(--danger); }
+    .like.on svg { fill: currentColor; }
+    .p-BROUILLON { background: var(--amber-soft); color: var(--amber); }
+    .p-PUBLIÉ { background: var(--teal-soft); color: var(--teal); }
+    .p-ARCHIVÉ { background: var(--surface-2); color: var(--muted); }
     .empty { color: var(--muted); text-align: center; padding: 32px 12px; }
     .empty svg { width: 40px; height: 40px; display: block; margin: 0 auto 8px; color: var(--faint); }
     .empty b { display: block; color: var(--ink); margin-bottom: 2px; }
@@ -380,6 +404,11 @@
     <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1 6.2L12 17.3 6.5 20.2l1-6.2L3 9.6l6.2-.9z"/></symbol>
     <symbol id="i-gauge" viewBox="0 0 24 24"><path d="M12 14l4-4"/><path d="M3.3 19a10 10 0 1 1 17.4 0"/></symbol>
     <symbol id="i-box" viewBox="0 0 24 24"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="M3 8l9 5 9-5M12 13v8"/></symbol>
+    <symbol id="i-mega" viewBox="0 0 24 24"><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13"/></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8L12 21.2l8.8-8.8a5.5 5.5 0 0 0 0-7.8z"/></symbol>
+    <symbol id="i-eye" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+    <symbol id="i-archive" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="5" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8M10 12h4"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></symbol>
     <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
   </svg>
 
@@ -397,6 +426,7 @@
         <a href="#saisie"><svg class="i"><use href="#i-plus"/></svg><span>Saisie</span></a>
         <a href="#recherche"><svg class="i"><use href="#i-search"/></svg><span>Recherche</span></a>
         <a href="#liste"><svg class="i"><use href="#i-list"/></svg><span>Correspondances</span></a>
+        <a href="#publications"><svg class="i"><use href="#i-mega"/></svg><span>Publications</span></a>
       </nav>
       <div class="top-actions">
         <span class="health" id="health" title="État de l'API">API…</span>
@@ -581,6 +611,39 @@
           </div>
         </div>
       </section>
+
+      <!-- Publications (entité Post) -->
+      <section class="card" id="publications">
+        <div class="card-head">
+          <div class="ico violet"><svg class="i"><use href="#i-mega"/></svg></div>
+          <div><h2>Publications <span class="badge count" id="post-count">0</span></h2><p id="post-sub">Annonces liées aux correspondances.</p></div>
+          <div class="right"><button class="btn btn-soft-violet btn-sm" id="post-new-btn" type="button"><svg class="i"><use href="#i-plus"/></svg><span>Nouvelle</span></button></div>
+        </div>
+        <form id="post-form" class="group" style="margin:0 0 14px" autocomplete="off" hidden>
+          <div class="group-title" style="color:var(--violet)">Nouvelle publication (brouillon)</div>
+          <div class="row">
+            <div><label>Id de la correspondance *</label><input name="matchId" required placeholder="Cliquez « Publier » dans le détail d'une correspondance" class="mono" /></div>
+            <div><label>Auteur *</label><input name="authorId" required value="USER-001" /></div>
+          </div>
+          <label>Titre *</label><input name="title" required maxlength="120" placeholder="Ex : iPhone bleu retrouvé à la cafétéria" />
+          <label>Contenu *</label><textarea name="content" rows="3" required maxlength="2000" placeholder="Décrivez l'objet et comment le récupérer"></textarea>
+          <label>Tags (séparés par des virgules)</label><input name="tags" placeholder="iphone, cafeteria" />
+          <div class="actions">
+            <button class="btn btn-primary" type="submit"><svg class="i"><use href="#i-check"/></svg><span>Enregistrer le brouillon</span></button>
+            <button class="btn btn-outline" type="button" id="post-cancel">Annuler</button>
+          </div>
+        </form>
+        <div class="toolbar">
+          <div class="seg" id="post-filter" role="tablist">
+            <button type="button" class="active" data-pf="feed">Fil</button>
+            <button type="button" data-pf="">Toutes</button>
+            <button type="button" data-pf="BROUILLON">Brouillons</button>
+            <button type="button" data-pf="ARCHIVÉ">Archivées</button>
+          </div>
+          <div class="search-field" style="max-width:190px;min-width:150px"><svg class="i"><use href="#i-heart"/></svg><input id="me" value="USER-001" title="Utilisateur qui aime les publications" aria-label="Votre identifiant" /></div>
+        </div>
+        <div class="posts" id="posts"></div>
+      </section>
     </div>
   </main>
 
@@ -678,7 +741,7 @@
 
     /* ---------- Navigation : section active, barre, retour en haut ---------- */
     const navLinks = [...document.querySelectorAll('#nav a')];
-    const sections = ['dashboard', 'saisie', 'recherche', 'liste'].map((id) => $(id));
+    const sections = ['dashboard', 'saisie', 'recherche', 'liste', 'publications'].map((id) => $(id));
     const setActive = (id) => navLinks.forEach((a) => a.classList.toggle('active', a.getAttribute('href') === '#' + id));
     let spyLock = 0;
     function spy() {
@@ -686,7 +749,7 @@
       // Section active = la dernière dont le haut est passé sous la barre de navigation
       let current = 'dashboard';
       for (const s of sections) if (s.getBoundingClientRect().top <= 110) current = s.id;
-      if (innerHeight + scrollY >= document.documentElement.scrollHeight - 4) current = 'liste';
+      if (scrollY > 0 && innerHeight + scrollY >= document.documentElement.scrollHeight - 4) current = 'publications';
       setActive(current);
     }
     navLinks.forEach((a) => a.addEventListener('click', () => { setActive(a.getAttribute('href').slice(1)); spyLock = Date.now() + 900; }));
@@ -827,11 +890,14 @@
           </dl>
         </div>
         <div class="d-section" id="hist-zone"><h4>Historique des statuts</h4><span class="sk" style="width:60%"></span></div>
-        <div class="d-section" id="fb-zone"><h4>Avis des utilisateurs</h4><span class="sk" style="width:80%"></span></div>`;
+        <div class="d-section" id="fb-zone"><h4>Avis des utilisateurs</h4><span class="sk" style="width:80%"></span></div>
+        <div class="d-section" id="mposts-zone"><h4>Publications</h4><span class="sk" style="width:70%"></span></div>`;
+      currentMatch = m;
       animateMeters($('result'));
       openDrawer();
       loadHistory(m._id);
       loadFeedbacks(m);
+      loadMatchPosts(m);
     }
 
     // ---- Métier : avis (MatchFeedback) de la correspondance affichée
@@ -949,14 +1015,14 @@
         $('kpi-sub').innerHTML = `<i style="--c:#7fb0ff">${s.parStatut['PROPOSÉ']} proposée(s)</i><i style="--c:#ff8a98">${s.parStatut['REJETÉ']} rejetée(s)</i><i style="--c:#2cc3a6">${f.data.total} avis utilisateurs</i>`;
       } catch (err) { $('kpis').innerHTML = `<div class="kpi"><span>${esc(err.message)}</span></div>`; }
     }
-    const refreshAll = () => { loadList(); loadStats(); };
+    const refreshAll = () => { loadList(); loadStats(); if (typeof loadPosts === 'function') loadPosts(); };
     let qTimer;
     $('list-q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(() => { page = 1; loadList(); }, 300); });
     $('list-form').addEventListener('submit', (e) => { e.preventDefault(); page = 1; busy(e.submitter, loadList); });
     $('list-sort').addEventListener('change', () => { page = 1; loadList(); });
     $('prev-btn').addEventListener('click', () => { page--; busy($('prev-btn'), loadList); });
     $('next-btn').addEventListener('click', () => { page++; busy($('next-btn'), loadList); });
-    $('refresh-btn').addEventListener('click', () => busy($('refresh-btn'), () => Promise.all([loadList(), loadStats()])));
+    $('refresh-btn').addEventListener('click', () => busy($('refresh-btn'), () => Promise.all([loadList(), loadStats(), loadPosts()])));
 
     /* ---------- Matching automatique ---------- */
     const CATEGORIES = ['Accessoires', 'Clés', 'Électronique', 'Documents', 'Vêtements', 'Portefeuille', 'Autre'];
@@ -1007,6 +1073,116 @@
             <small>${new Date(h.date).toLocaleString('fr-FR')}${h.comment ? ' — ' + esc(h.comment) : ''}</small></li>`).join('')}</ul>`;
       } catch (err) { $('hist-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
     }
+
+    /* ---------- Publications (entité Post) ---------- */
+    let currentMatch = null;
+    let postFilter = 'feed';
+    const me = () => $('me').value.trim() || 'USER-001';
+    const fmtDate = (d) => (d ? new Date(d).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '');
+    function postCard(p, i = 0) {
+      const likes = p.likesCount ?? (p.likes || []).length;
+      const liked = (p.likes || []).includes(me());
+      const m = p.match || (p.matchId && typeof p.matchId === 'object' ? p.matchId : null);
+      const matchId = m ? m._id : p.matchId;
+      return `<article class="post ${p.status === 'ARCHIVÉ' ? 'archived' : ''}" style="animation-delay:${i * 40}ms">
+        <div class="post-top">
+          <div style="flex:1;min-width:0">
+            <h3>${esc(p.title)}</h3>
+            <div class="by">${esc(p.authorId)} · ${fmtDate(p.publishedAt || p.createdAt)} · <a data-search="${esc(matchId)}" title="Ouvrir la correspondance">correspondance …${esc(String(matchId).slice(-6))}</a>${m && m.score != null ? ` · score ${m.score}` : ''}</div>
+          </div>
+          <span class="pill p-${esc(p.status)}">${esc(p.status)}</span>
+        </div>
+        <p>${esc(p.content)}</p>
+        ${(p.tags || []).length ? `<div class="tags">${p.tags.map((t) => `<span class="tag">#${esc(t)}</span>`).join('')}</div>` : ''}
+        ${p.archivedReason && p.status === 'ARCHIVÉ' ? `<div class="hint">${icon('archive')}${esc(p.archivedReason)}</div>` : ''}
+        <div class="post-foot">
+          ${p.status === 'PUBLIÉ' ? `<button class="btn btn-sm like ${liked ? 'on' : ''}" data-pact="like" data-pid="${p._id}" title="J'aime (${esc(me())})">${icon('heart')}<span>${likes}</span></button>` : `<span class="meta-i">${icon('heart')}${likes}</span>`}
+          <span class="meta-i">${icon('eye')}${p.views || 0}</span>
+          <span class="spacer"></span>
+          ${p.status === 'BROUILLON' ? `<button class="btn btn-sm btn-success" data-pact="publish" data-pid="${p._id}">${icon('send')}<span>Publier</span></button>` : ''}
+          ${p.status !== 'ARCHIVÉ' ? `<button class="btn btn-sm btn-outline" data-pact="archive" data-pid="${p._id}">${icon('archive')}<span>Archiver</span></button>` : ''}
+          <button class="btn btn-sm btn-soft-red btn-icon" data-pact="delete" data-pid="${p._id}" title="Supprimer" aria-label="Supprimer">${icon('trash')}</button>
+        </div>
+      </article>`;
+    }
+    const emptyPosts = (txt) => `<div class="empty">${icon('mega')}<b>Aucune publication</b>${txt}</div>`;
+    async function loadPosts() {
+      try {
+        const [list, stats] = await Promise.all([
+          postFilter === 'feed' ? api('/api/posts/feed?limit=20') : api(`/api/posts?limit=30${postFilter ? '&status=' + encodeURIComponent(postFilter) : ''}`),
+          api('/api/posts/stats'),
+        ]);
+        const s = stats.data;
+        $('post-count').textContent = s.total;
+        $('post-sub').textContent = `${s.parStatut['PUBLIÉ']} publiée(s) · ${s.parStatut['BROUILLON']} brouillon(s) · ${s.parStatut['ARCHIVÉ']} archivée(s) · ${s.totalLikes} j'aime · ${s.totalVues} vues`;
+        $('posts').innerHTML = list.data.length ? list.data.map(postCard).join('')
+          : emptyPosts(postFilter === 'feed' ? 'Publiez une correspondance confirmée depuis son panneau de détail.' : 'Rien dans cette catégorie.');
+      } catch (err) { $('posts').innerHTML = emptyPosts(esc(err.message)); }
+    }
+    async function loadMatchPosts(m) {
+      try {
+        const r = await api(`/api/posts?matchId=${m._id}&limit=20`);
+        const canPublish = ['CONFIRMÉ', 'RESTITUÉ'].includes(m.status);
+        $('mposts-zone').innerHTML = `<h4>Publications <span class="badge count">${r.total}</span></h4>
+          <div class="posts">${r.data.map(postCard).join('')}</div>
+          ${m.status === 'REJETÉ' ? `<div class="hint">${icon('info')}Correspondance rejetée : aucune publication possible.</div>` : `
+          <div class="actions" style="margin-top:${r.total ? 12 : 0}px">
+            <button class="btn btn-sm ${canPublish ? 'btn-success' : 'btn-soft-violet'}" data-gen="${m._id}" data-publish="${canPublish}">${icon('bolt')}<span>${canPublish ? 'Générer et publier' : 'Générer un brouillon'}</span></button>
+            <button class="btn btn-sm btn-outline" data-newpost="${m._id}">${icon('edit')}<span>Rédiger</span></button>
+          </div>
+          <div class="hint">${icon('info')}Seule une correspondance CONFIRMÉ ou RESTITUÉ peut être publiée.</div>`}`;
+      } catch (err) { $('mposts-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+    }
+    const refreshPosts = () => { loadPosts(); if (currentMatch && $('drawer').classList.contains('open')) loadMatchPosts(currentMatch); };
+    document.querySelectorAll('#post-filter button').forEach((b) => b.addEventListener('click', () => {
+      document.querySelectorAll('#post-filter button').forEach((x) => x.classList.toggle('active', x === b));
+      postFilter = b.dataset.pf; loadPosts();
+    }));
+    $('me').addEventListener('change', loadPosts);
+    const showPostForm = (show, matchId) => {
+      $('post-form').hidden = !show;
+      if (show) { if (matchId) $('post-form').matchId.value = matchId; $('post-form').title.focus({ preventScroll: true }); }
+    };
+    $('post-new-btn').addEventListener('click', () => showPostForm($('post-form').hidden));
+    $('post-cancel').addEventListener('click', () => { $('post-form').reset(); showPostForm(false); });
+    $('post-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const f = e.target;
+      busy(e.submitter, async () => {
+        try {
+          const r = await api('/api/posts', { method: 'POST', body: JSON.stringify({
+            matchId: f.matchId.value.trim(), authorId: f.authorId.value.trim(), title: f.title.value.trim(), content: f.content.value.trim(),
+            tags: f.tags.value.split(',').map((t) => t.trim()).filter(Boolean) }) });
+          toast(r.message); f.reset(); f.authorId.value = me(); showPostForm(false);
+          postFilter = ''; document.querySelectorAll('#post-filter button').forEach((x) => x.classList.toggle('active', x.dataset.pf === ''));
+          refreshPosts();
+        } catch (err) { toast(err.message, false); }
+      });
+    });
+    document.addEventListener('click', async (e) => {
+      const t = e.target.closest('[data-pact],[data-gen],[data-newpost]');
+      if (!t) return;
+      if (t.dataset.newpost) { closeDrawer(); showPostForm(true, t.dataset.newpost); $('publications').scrollIntoView(); return; }
+      if (t.dataset.gen) {
+        return busy(t, async () => {
+          try {
+            const r = await api(`/api/posts/from-match/${t.dataset.gen}${t.dataset.publish === 'true' ? '?publish=true' : ''}`, { method: 'POST', body: JSON.stringify({ authorId: me() }) });
+            toast(r.message); refreshPosts();
+          } catch (err) { toast(err.message, false); }
+        });
+      }
+      const id = t.dataset.pid, act = t.dataset.pact;
+      if (act === 'delete' && !(await confirmDialog('Supprimer cette publication ?', 'Elle sera supprimée définitivement.'))) return;
+      busy(t, async () => {
+        try {
+          const r = act === 'like' ? await api(`/api/posts/${id}/like`, { method: 'POST', body: JSON.stringify({ userId: me() }) })
+            : act === 'delete' ? await api(`/api/posts/${id}`, { method: 'DELETE' })
+            : await api(`/api/posts/${id}/${act}`, { method: 'PATCH', body: '{}' });
+          if (act !== 'like') toast(r.message);
+          refreshPosts();
+        } catch (err) { toast(err.message, false); }
+      });
+    });
 
     /* ---------- Actions : détail, statut, modifier, supprimer ---------- */
     document.addEventListener('click', async (e) => {

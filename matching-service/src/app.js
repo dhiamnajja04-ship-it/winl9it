@@ -6,6 +6,7 @@ const swaggerDocument = require('./docs/swagger.json');
 
 const matchRoutes = require('./routes/match.routes');
 const feedbackRoutes = require('./routes/feedback.routes');
+const postRoutes = require('./routes/post.routes');
 const errorHandler = require('./middlewares/errorHandler');
 
 const app = express();
@@ -23,6 +24,7 @@ app.get('/health', (req, res) =>
 
 app.use('/api/matches', matchRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
+app.use('/api/posts', postRoutes);
 
 // Documentation Swagger / OpenAPI (slide 8)
 app.use(

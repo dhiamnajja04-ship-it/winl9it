@@ -3,14 +3,16 @@
   "info": {
     "title": "WinL9it — Matching Service",
     "version": "1.0.0",
-    "description": "CRUD + métier des correspondances (Match) entre objets perdus et retrouvés, et des retours utilisateurs (MatchFeedback). Responsable : Dhia Eddine Mnajja."
+    "description": "CRUD + métier des correspondances (Match) entre objets perdus et retrouvés, des retours utilisateurs (MatchFeedback) et des publications (Post). Responsable : Dhia Eddine Mnajja."
   },
   "servers": [{ "url": "http://localhost:3004" }],
   "tags": [
     { "name": "Matches", "description": "Correspondances objets perdus / retrouvés" },
     { "name": "Feedbacks", "description": "Retours sur les correspondances" },
     { "name": "Matches — Métier", "description": "Matching automatique, cycle de vie, historique, suggestions, tableau de bord" },
-    { "name": "Feedbacks — Métier", "description": "Précision du matching et rejet automatique (≥ 3 avis et < 50 % positifs). Un seul avis par utilisateur et par correspondance (409)." }
+    { "name": "Feedbacks — Métier", "description": "Précision du matching et rejet automatique (≥ 3 avis et < 50 % positifs). Un seul avis par utilisateur et par correspondance (409)." },
+    { "name": "Posts", "description": "Publications liées à une correspondance" },
+    { "name": "Posts — Métier", "description": "Publication réservée aux correspondances CONFIRMÉ / RESTITUÉ, cycle BROUILLON → PUBLIÉ → ARCHIVÉ, j'aime, vues, fil par popularité, génération automatique. Archivage automatique quand la correspondance est rejetée ; suppression en cascade avec la correspondance." }
   ],
   "paths": {
     "/api/matches": {
@@ -120,6 +122,77 @@
         "tags": ["Feedbacks — Métier"], "summary": "Fiabilité d'une correspondance d'après ses avis (verdict FIABLE / MITIGÉ / DOUTEUX / INSUFFISANT)",
         "responses": { "200": { "description": "Statistiques" }, "404": { "description": "Correspondance introuvable" } }
       }
+    },
+    "/api/posts": {
+      "post": {
+        "tags": ["Posts"], "summary": "Ajouter une publication (créée en BROUILLON)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PostInput" } } } },
+        "responses": { "201": { "description": "Créée" }, "400": { "description": "Données invalides" }, "404": { "description": "Correspondance introuvable" }, "409": { "description": "Correspondance rejetée" } }
+      },
+      "get": {
+        "tags": ["Posts"], "summary": "Lister les publications (filtres, recherche, pagination)",
+        "parameters": [
+          { "name": "matchId", "in": "query", "schema": { "type": "string" } },
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["BROUILLON", "PUBLIÉ", "ARCHIVÉ"] } },
+          { "name": "authorId", "in": "query", "schema": { "type": "string" } },
+          { "name": "tag", "in": "query", "schema": { "type": "string" } },
+          { "name": "q", "in": "query", "description": "Recherche dans le titre et le contenu", "schema": { "type": "string" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20 } }
+        ],
+        "responses": { "200": { "description": "Liste paginée" } }
+      }
+    },
+    "/api/posts/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "tags": ["Posts"], "summary": "Rechercher une publication par id (une publication PUBLIÉ compte une vue)", "responses": { "200": { "description": "Trouvée" }, "400": { "description": "Id invalide" }, "404": { "description": "Introuvable" } } },
+      "put": {
+        "tags": ["Posts"], "summary": "Modifier le titre, le contenu ou les tags",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/PostInput" } } } },
+        "responses": { "200": { "description": "Modifiée" }, "404": { "description": "Introuvable" }, "409": { "description": "Publication archivée" } }
+      },
+      "delete": { "tags": ["Posts"], "summary": "Supprimer une publication", "responses": { "200": { "description": "Supprimée" }, "404": { "description": "Introuvable" } } }
+    },
+    "/api/posts/{id}/publish": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "patch": { "tags": ["Posts — Métier"], "summary": "Publier (BROUILLON → PUBLIÉ) — correspondance CONFIRMÉ ou RESTITUÉ uniquement", "responses": { "200": { "description": "Publiée" }, "409": { "description": "Pas un brouillon, ou correspondance non confirmée" } } }
+    },
+    "/api/posts/{id}/archive": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "patch": {
+        "tags": ["Posts — Métier"], "summary": "Archiver (BROUILLON | PUBLIÉ → ARCHIVÉ)",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "reason": { "type": "string", "example": "Doublon" } } } } } },
+        "responses": { "200": { "description": "Archivée" }, "409": { "description": "Déjà archivée" } }
+      }
+    },
+    "/api/posts/{id}/like": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "post": {
+        "tags": ["Posts — Métier"], "summary": "J'aime / je n'aime plus (bascule, un seul j'aime par utilisateur)",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["userId"], "properties": { "userId": { "type": "string", "example": "USER-001" } } } } } },
+        "responses": { "200": { "description": "liked, likesCount" }, "400": { "description": "userId manquant" }, "409": { "description": "Publication non publiée" } }
+      }
+    },
+    "/api/posts/feed": {
+      "get": {
+        "tags": ["Posts — Métier"], "summary": "Fil des publications PUBLIÉ classées par popularité (j'aime × 3 + vues), avec leur correspondance",
+        "parameters": [{ "name": "limit", "in": "query", "schema": { "type": "integer", "default": 10 } }],
+        "responses": { "200": { "description": "Fil" } }
+      }
+    },
+    "/api/posts/from-match/{id}": {
+      "parameters": [
+        { "name": "id", "in": "path", "required": true, "description": "Id de la correspondance", "schema": { "type": "string" } },
+        { "name": "publish", "in": "query", "description": "Publier directement si la correspondance est confirmée", "schema": { "type": "boolean" } }
+      ],
+      "post": {
+        "tags": ["Posts — Métier"], "summary": "Générer automatiquement une publication (titre, contenu, tags) à partir d'une correspondance",
+        "requestBody": { "content": { "application/json": { "schema": { "type": "object", "properties": { "authorId": { "type": "string", "example": "USER-002" } } } } } },
+        "responses": { "201": { "description": "Générée" }, "404": { "description": "Correspondance introuvable" }, "409": { "description": "Correspondance rejetée" } }
+      }
+    },
+    "/api/posts/stats": {
+      "get": { "tags": ["Posts — Métier"], "summary": "Statistiques : total, par statut, total j'aime et vues, top 3", "responses": { "200": { "description": "Statistiques" } } }
     }
   },
   "components": {
@@ -162,6 +235,17 @@
           "lost": { "$ref": "#/components/schemas/ItemInput" },
           "found": { "$ref": "#/components/schemas/ItemInput" },
           "notes": { "type": "string" }
+        }
+      },
+      "PostInput": {
+        "type": "object",
+        "required": ["matchId", "authorId", "title", "content"],
+        "properties": {
+          "matchId": { "type": "string" },
+          "authorId": { "type": "string", "example": "USER-001" },
+          "title": { "type": "string", "maxLength": 120, "example": "iPhone bleu retrouvé à la cafétéria" },
+          "content": { "type": "string", "maxLength": 2000, "example": "Un iPhone 13 bleu avec coque noire a été retrouvé." },
+          "tags": { "type": "array", "items": { "type": "string" }, "example": ["iphone", "cafeteria"] }
         }
       },
       "FeedbackInput": {

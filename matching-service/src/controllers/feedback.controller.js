@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Match = require('../models/Match');
 const MatchFeedback = require('../models/MatchFeedback');
+const { archivePostsOfMatches } = require('../utils/postSync');
 
 const ALLOWED = ['matchId', 'userId', 'isCorrect', 'rating', 'comment'];
 const pick = (body) =>
@@ -69,6 +70,7 @@ exports.createFeedback = async (req, res, next) => {
     if (match.status === 'PROPOSÉ' && stats.total >= MIN_FEEDBACKS && stats.tauxPrecision < MIN_PRECISION) {
       match.setStatus('REJETÉ', `Rejet automatique : ${stats.tauxPrecision} % d'avis positifs sur ${stats.total}`);
       await match.save();
+      await archivePostsOfMatches([match._id], 'Correspondance rejetée par les avis');
       autoRejected = true;
     }
 

@@ -142,6 +142,12 @@ const FEEDBACKS = [
     console.log(`${r.status === 200 ? '🔁' : '⚠️ '} ${key.padEnd(13)} → ${status}${r.status === 200 ? extra : ' : ' + r.body.message}`);
   }
 
+  // Brouillon sur une correspondance qui sera rejetée par les avis → archivé automatiquement
+  await call('POST', '/posts', {
+    matchId: ids.airpods, authorId: 'USER-006', title: 'Écouteurs blancs trouvés dans le bus 20',
+    content: 'Quelqu\'un a perdu des AirPods ? Ils ont été déposés au bureau des objets trouvés.', tags: ['airpods', 'bus'],
+  });
+
   let fbOk = 0;
   for (const [key, userId, isCorrect, rating, comment] of FEEDBACKS) {
     const r = await call('POST', '/feedbacks', { matchId: ids[key], userId, isCorrect, rating, comment });
@@ -152,6 +158,29 @@ const FEEDBACKS = [
       console.log(`⚠️  avis ${userId} sur ${key} : ${r.status} ${r.body.message}`);
     }
   }
+
+  // Publications : générées automatiquement (et publiées) pour les correspondances confirmées / restituées
+  const postIds = {};
+  for (const [key, author] of [['iphone', 'USER-001'], ['sac', 'USER-002'], ['montre', 'USER-008'], ['carte', 'USER-005'], ['pc', 'USER-010']]) {
+    const r = await call('POST', `/posts/from-match/${ids[key]}?publish=true`, { authorId: author });
+    if (r.status === 201) postIds[key] = r.body.data._id;
+  }
+  // Un brouillon rédigé à la main sur une correspondance encore proposée (ne peut pas encore être publié)
+  const draft = await call('POST', '/posts', {
+    matchId: ids.cles, authorId: 'USER-003', title: 'Clés Peugeot trouvées au parking',
+    content: 'Trousseau avec porte-clés rouge trouvé au parking ESPRIT. En attente de confirmation du propriétaire.', tags: ['cles', 'parking'],
+  });
+  const refused = await call('PATCH', `/posts/${draft.body.data._id}/publish`);
+  console.log(`📝 brouillon « clés » : publication refusée (${refused.status}) tant que la correspondance n'est pas confirmée`);
+  // J'aime et vues
+  const LIKES = { iphone: ['USER-014', 'USER-021', 'USER-003', 'USER-007'], sac: ['USER-001', 'USER-011', 'USER-019'], montre: ['USER-004'], carte: ['USER-002', 'USER-009'] };
+  for (const [key, users] of Object.entries(LIKES)) for (const u of users) await call('POST', `/posts/${postIds[key]}/like`, { userId: u });
+  for (const [key, n] of [['iphone', 9], ['sac', 6], ['montre', 3], ['carte', 4], ['pc', 2]]) {
+    for (let i = 0; i < n; i++) await call('GET', `/posts/${postIds[key]}`);
+  }
+  await call('PATCH', `/posts/${postIds.pc}/archive`, { reason: 'Ordinateur déjà récupéré au secrétariat' });
+  const { body: pstats } = await call('GET', '/posts/stats');
+  console.log(`📣 publications : ${JSON.stringify(pstats.data.parStatut)} · ${pstats.data.totalLikes} j'aime · ${pstats.data.totalVues} vues`);
 
   const { body: stats } = await call('GET', '/matches/stats');
   console.log(`\n📦 ${created} correspondance(s) créée(s), ${skipped} déjà présente(s), ${fbOk} avis ajouté(s)`);

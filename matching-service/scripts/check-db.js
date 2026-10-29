@@ -8,6 +8,7 @@ require('dotenv').config();
 const mongoose = require('mongoose');
 const Match = require('../src/models/Match');
 const MatchFeedback = require('../src/models/MatchFeedback');
+const Post = require('../src/models/Post');
 const { computeScore } = require('../src/utils/scoring');
 const { STATUSES, canTransition } = require('../src/utils/workflow');
 
@@ -94,6 +95,20 @@ const check = (ok, label, detail = '') => {
 
   const autoRejected = matches.filter((m) => (m.history || []).some((h) => /Rejet automatique/.test(h.comment || '')));
   console.log(`   ↳ ${autoRejected.length} rejet(s) automatique(s) tracé(s) dans l'historique`);
+
+  // ---------- Publications ----------
+  const posts = await Post.find().lean();
+  console.log(`\n📣 ${posts.length} publication(s) en base`);
+  const matchById = Object.fromEntries(matches.map((m) => [String(m._id), m]));
+  const postOrphans = posts.filter((p) => !matchById[String(p.matchId)]);
+  check(!postOrphans.length, 'aucune publication orpheline (chaque publication pointe vers une correspondance existante)');
+  check(posts.every((p) => ['BROUILLON', 'PUBLIÉ', 'ARCHIVÉ'].includes(p.status)), 'statuts de publication valides (BROUILLON, PUBLIÉ, ARCHIVÉ)');
+  const badPublished = posts.filter((p) => p.status === 'PUBLIÉ' && (!p.publishedAt || !['CONFIRMÉ', 'RESTITUÉ'].includes((matchById[String(p.matchId)] || {}).status)));
+  check(!badPublished.length, 'publication PUBLIÉ = correspondance CONFIRMÉ ou RESTITUÉ, avec une date de publication');
+  const activeOnRejected = posts.filter((p) => p.status !== 'ARCHIVÉ' && (matchById[String(p.matchId)] || {}).status === 'REJETÉ');
+  check(!activeOnRejected.length, 'les publications d\'une correspondance rejetée sont archivées');
+  check(posts.every((p) => new Set(p.likes).size === p.likes.length), 'un seul « j\'aime » par utilisateur et par publication');
+  check(posts.every((p) => p.views >= 0), 'compteurs de vues positifs');
 
   // ---------- Cohérence avec l'API (agrégations MongoDB) ----------
   const agg = await Match.aggregate([{ $group: { _id: '$status', n: { $sum: 1 } } }]);

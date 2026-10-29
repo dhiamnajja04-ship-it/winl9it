@@ -3,7 +3,7 @@
 # WinL9it — Matching Service
 
 Microservice **Matching Service** du projet WinL9it (ESPRIT).
-Responsable : **Dhia Eddine Mnajja**. Entités : **Match** et **MatchFeedback** (slide 9).
+Responsable : **Dhia Eddine Mnajja**. Entités : **Match**, **MatchFeedback** et **Post**.
 
 Le service gère les **correspondances** entre une annonce d'objet perdu (Lost Item Service)
 et une annonce d'objet retrouvé (Found Item Service), avec un score calculé sur les
@@ -64,9 +64,29 @@ Exemple (`postman/` → « Match — Nouvelles API ») : iPhone perdu / trouvé 
 | **Fiabilité d'une correspondance** : nb d'avis, précision, note moyenne, verdict `FIABLE` / `MITIGÉ` / `DOUTEUX` / `INSUFFISANT` | `GET /api/feedbacks/stats/:matchId` |
 | **Précision globale du matching**, et par catégorie | `GET /api/feedbacks/stats` |
 
+### Entité 3 — Post (publication)
+
+Publication liée à une correspondance : `matchId`, `authorId`, `title`, `content`, `tags`,
+`status` (`BROUILLON` → `PUBLIÉ` → `ARCHIVÉ`), `likes`, `views`, `publishedAt`, `archivedReason`.
+CRUD : `POST`, `GET`, `GET /:id`, `PUT /:id`, `DELETE /:id` sur `/api/posts` (filtres `matchId`, `status`, `authorId`, `tag`, `q`, pagination).
+
+| Règle / fonctionnalité | Endpoint |
+|---|---|
+| Toute publication est créée en `BROUILLON` ; impossible sur une correspondance `REJETÉ` (`409`) | `POST /api/posts` |
+| **Publication réservée** aux correspondances `CONFIRMÉ` ou `RESTITUÉ` (`409` sinon) | `PATCH /api/posts/:id/publish` |
+| **Archivage** ; une publication archivée ne peut plus être modifiée ni aimée (`409`) | `PATCH /api/posts/:id/archive` |
+| **J'aime / je n'aime plus** (bascule, un seul j'aime par utilisateur, publications `PUBLIÉ` uniquement) | `POST /api/posts/:id/like` |
+| **Vues** : consulter une publication publiée incrémente son compteur | `GET /api/posts/:id` |
+| **Fil** des publications classées par popularité (j'aime × 3 + vues), avec leur correspondance | `GET /api/posts/feed` |
+| **Génération automatique** du titre, du contenu et des tags à partir d'une correspondance (`?publish=true`) | `POST /api/posts/from-match/:matchId` |
+| **Statistiques** : total, par statut, j'aime, vues, top 3 | `GET /api/posts/stats` |
+| **Archivage automatique** quand la correspondance est rejetée (manuellement, par concurrence ou par les avis) ; **suppression en cascade** avec la correspondance | — |
+
 Dans l'interface web : tableau de bord en haut, carte **Matching automatique** (Calculer le score / Créer),
 liste avec **recherche, tri et pagination**, et dans le détail d'une correspondance (Rechercher par id)
-les boutons **Confirmer / Rejeter / Marquer restitué**, l'**historique des statuts** et la zone **Avis des utilisateurs**.
+les boutons **Confirmer / Rejeter / Marquer restitué**, l'**historique des statuts**, la zone **Avis des utilisateurs**
+et ses **Publications** (« Générer et publier », « Rédiger »). La section **Publications** affiche le fil
+(j'aime, vues), les brouillons et les archivées.
 
 ## Technologies (slide 8)
 
@@ -136,9 +156,15 @@ npm run check-db          # vérifie l'intégrité des données directement dans
 | GET | `/api/matches/stats` | Métier — tableau de bord |
 | GET | `/api/feedbacks/stats` | Métier — précision globale |
 | GET | `/api/feedbacks/stats/:matchId` | Métier — fiabilité d'une correspondance |
+| POST / GET / GET :id / PUT / DELETE | `/api/posts` | CRUD Post |
+| PATCH | `/api/posts/:id/publish` · `/api/posts/:id/archive` | Métier — publier / archiver |
+| POST | `/api/posts/:id/like` | Métier — j'aime |
+| GET | `/api/posts/feed` · `/api/posts/stats` | Métier — fil, statistiques |
+| POST | `/api/posts/from-match/:matchId` | Métier — génération automatique |
 
-La collection Postman contient 6 dossiers (Health, CRUD Match, CRUD MatchFeedback,
-Match — Métier, MatchFeedback — Métier, Match — Nouvelles API) : **54 requêtes, 87 assertions**.
+La collection Postman contient 8 dossiers (Health, CRUD Match, CRUD MatchFeedback,
+Match — Métier, MatchFeedback — Métier, Match — Nouvelles API, Post (Entité 3), Post — Métier) :
+**90 requêtes, 146 assertions**.
 
 Exemple de corps pour l'ajout :
 ```json
@@ -164,12 +190,13 @@ matching-service/
     ├── server.js              # Démarrage + connexion MongoDB
     ├── app.js                 # Express, routes, Swagger
     ├── config/db.js
-    ├── models/                # Match, MatchFeedback
+    ├── models/                # Match, MatchFeedback, Post
     ├── controllers/           # CRUD + métier
     ├── routes/
     ├── middlewares/           # Validation d'id, gestion des erreurs
     ├── utils/scoring.js       # Calcul du score + niveau de confiance
     ├── utils/similarity.js    # Matching automatique (texte, distance GPS, dates)
     ├── utils/workflow.js      # Cycle de vie (transitions autorisées)
+    ├── utils/postSync.js      # Archivage des publications d'une correspondance rejetée
     └── docs/swagger.json
 ```

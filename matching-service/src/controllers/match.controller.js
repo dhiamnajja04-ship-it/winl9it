@@ -1,5 +1,7 @@
 const Match = require('../models/Match');
 const MatchFeedback = require('../models/MatchFeedback');
+const Post = require('../models/Post');
+const { archivePostsOfMatches } = require('../utils/postSync');
 const { computeScore, scoreLevel } = require('../utils/scoring');
 const { TRANSITIONS, STATUSES, canTransition } = require('../utils/workflow');
 const { computeCriteria, validateItem } = require('../utils/similarity');
@@ -33,12 +35,14 @@ async function checkStatusChange(match, newStatus) {
 
 /** Après confirmation : les autres propositions sur le même objet sont rejetées automatiquement */
 async function rejectConcurrentMatches(match) {
+  const concurrents = await Match.find({
+    _id: { $ne: match._id },
+    status: 'PROPOSÉ',
+    $or: [{ lostItemId: match.lostItemId }, { foundItemId: match.foundItemId }],
+  }).distinct('_id');
+  if (!concurrents.length) return 0;
   const { modifiedCount } = await Match.updateMany(
-    {
-      _id: { $ne: match._id },
-      status: 'PROPOSÉ',
-      $or: [{ lostItemId: match.lostItemId }, { foundItemId: match.foundItemId }],
-    },
+    { _id: { $in: concurrents }, status: 'PROPOSÉ' },
     {
       $set: { status: 'REJETÉ' },
       $push: {
@@ -51,6 +55,7 @@ async function rejectConcurrentMatches(match) {
       },
     }
   );
+  await archivePostsOfMatches(concurrents, 'Correspondance rejetée automatiquement');
   return modifiedCount;
 }
 
@@ -154,24 +159,28 @@ exports.updateMatch = async (req, res, next) => {
     await match.save(); // save() déclenche les validateurs du schéma
 
     const rejected = statusChanged && match.status === 'CONFIRMÉ' ? await rejectConcurrentMatches(match) : 0;
+    if (statusChanged && match.status === 'REJETÉ') await archivePostsOfMatches([match._id], 'Correspondance rejetée');
     res.json({ success: true, message: 'Correspondance modifiée', data: match, autresRejetees: rejected });
   } catch (err) {
     next(err);
   }
 };
 
-/** DELETE /api/matches/:id — Supprimer une correspondance (et ses feedbacks) */
+/** DELETE /api/matches/:id — Supprimer une correspondance (et ses feedbacks et publications) */
 exports.deleteMatch = async (req, res, next) => {
   try {
     const match = await Match.findByIdAndDelete(req.params.id);
     if (!match) {
       return res.status(404).json({ success: false, message: 'Correspondance introuvable' });
     }
-    const { deletedCount } = await MatchFeedback.deleteMany({ matchId: match._id });
+    const [{ deletedCount }, { deletedCount: postsDeleted }] = await Promise.all([
+      MatchFeedback.deleteMany({ matchId: match._id }),
+      Post.deleteMany({ matchId: match._id }),
+    ]);
     res.json({
       success: true,
       message: 'Correspondance supprimée',
-      data: { id: match._id, feedbacksSupprimes: deletedCount },
+      data: { id: match._id, feedbacksSupprimes: deletedCount, postsSupprimes: postsDeleted },
     });
   } catch (err) {
     next(err);
@@ -198,6 +207,7 @@ exports.changeStatus = async (req, res, next) => {
     match.setStatus(status, comment);
     await match.save();
     const rejected = status === 'CONFIRMÉ' ? await rejectConcurrentMatches(match) : 0;
+    if (status === 'REJETÉ') await archivePostsOfMatches([match._id], comment || 'Correspondance rejetée');
 
     res.json({
       success: true,
