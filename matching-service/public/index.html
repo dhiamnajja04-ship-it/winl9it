@@ -365,8 +365,40 @@
 
     .to-top { position: fixed; left: 20px; bottom: 20px; z-index: 25; opacity: 0; transform: translateY(10px); pointer-events: none; transition: opacity .25s, transform .25s var(--ease); }
     .to-top.show { opacity: 1; transform: none; pointer-events: auto; }
-    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 20px 34px; }
-    footer kbd { margin: 0 2px; }
+    /* =================== Pied de page =================== */
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    main { width: 100%; }
+    .site-footer { position: relative; overflow: hidden; margin-top: auto; color: #c5d4ee; background: radial-gradient(700px 260px at 100% 0%, rgba(15,159,135,.35), transparent 60%), linear-gradient(135deg, #0a2350, #0b2f6b 60%, #0a2350); }
+    .site-footer::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 3px; background: linear-gradient(90deg, #1d63e0, #0f9f87, #6d4ee6); }
+    .footer-inner { position: relative; max-width: 1260px; margin: 0 auto; padding: 42px 20px 26px; display: grid; grid-template-columns: minmax(0, 1.5fr) repeat(3, minmax(0, 1fr)); gap: 32px; }
+    @media (max-width: 900px) { .footer-inner { grid-template-columns: repeat(2, minmax(0, 1fr)); } .f-brand { grid-column: 1 / -1; } }
+    @media (max-width: 480px) { .footer-inner { grid-template-columns: minmax(0, 1fr); gap: 24px; } }
+    .f-brand .brand-name { color: #fff; font-size: 21px; }
+    .f-brand .brand-name span { color: #2cc3a6; }
+    .f-brand .brand-sub { color: #8fa6cc; }
+    .f-brand p { margin: 14px 0 16px; font-size: 13px; line-height: 1.6; max-width: 360px; }
+    .f-badges { display: flex; gap: 8px; flex-wrap: wrap; }
+    .f-badge { display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 99px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); color: #dbe6f8; }
+    .f-badge.live::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: #2cc3a6; box-shadow: 0 0 0 3px rgba(44,195,166,.25); }
+    .f-col h4 { margin: 4px 0 14px; color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .9px; text-transform: uppercase; }
+    .f-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+    .f-col a, .f-col li > span { display: inline-flex; align-items: center; gap: 8px; color: #c5d4ee; text-decoration: none; font-size: 13px; transition: color .2s, transform .2s var(--ease); }
+    .f-col a:hover { color: #fff; transform: translateX(3px); }
+    .f-col a svg { opacity: .7; }
+    .f-col .mono { font-size: 11.5px; color: #9fb4d8; }
+    .f-col .me { color: #2cc3a6; font-weight: 700; }
+    .f-col .dot { width: 6px; height: 6px; border-radius: 50%; background: #5f7aa6; flex: none; }
+    .f-col .me .dot { background: #2cc3a6; box-shadow: 0 0 0 3px rgba(44,195,166,.25); }
+    .footer-bottom { position: relative; border-top: 1px solid rgba(255,255,255,.1); }
+    .footer-bottom-inner { max-width: 1260px; margin: 0 auto; padding: 16px 20px 22px; display: flex; align-items: center; gap: 12px 18px; flex-wrap: wrap; font-size: 12.5px; color: #9fb4d8; }
+    .footer-bottom-inner b { color: #fff; font-weight: 600; }
+    .footer-bottom .stack-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+    .footer-bottom .stack-chips span { font-size: 11px; padding: 2px 8px; border-radius: 6px; background: rgba(255,255,255,.07); color: #c5d4ee; }
+    .footer-bottom .keys { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+    .footer-bottom kbd { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); color: #fff; }
+    .footer-bottom .btn-glass { --c: #fff; height: 32px; background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.2); }
+    .footer-bottom .btn-glass:hover { background: rgba(255,255,255,.18); }
+    @media (max-width: 700px) { .footer-bottom .keys { margin-left: 0; } }
 
     @media (max-width: 560px) {
       .hero-inner, main, .topbar-inner { padding-left: 14px; padding-right: 14px; }
@@ -647,7 +679,64 @@
     </div>
   </main>
 
-  <footer>WinL9it · Matching Service — Dhia Eddine Mnajja · ESPRIT<br />Raccourcis : <kbd>/</kbd> rechercher · <kbd>Échap</kbd> fermer</footer>
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="f-brand">
+        <a class="brand" href="#dashboard">
+          <img src="/logo.svg" alt="" />
+          <div><div class="brand-name">Win<span>L9it</span></div><div class="brand-sub">Matching Service</div></div>
+        </a>
+        <p>Plateforme intelligente pour retrouver les objets perdus : le Matching Service rapproche objets perdus et objets retrouvés, recueille les avis et publie les objets restitués.</p>
+        <div class="f-badges">
+          <span class="f-badge live" id="f-health">API en ligne</span>
+          <span class="f-badge">v1.0.0</span>
+          <span class="f-badge">Port 3004</span>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <h4>Navigation</h4>
+        <ul>
+          <li><a href="#dashboard"><svg class="i"><use href="#i-dash"/></svg>Tableau de bord</a></li>
+          <li><a href="#saisie"><svg class="i"><use href="#i-plus"/></svg>Ajouter une correspondance</a></li>
+          <li><a href="#saisie" data-goto="auto"><svg class="i"><use href="#i-bolt"/></svg>Matching automatique</a></li>
+          <li><a href="#liste"><svg class="i"><use href="#i-list"/></svg>Correspondances</a></li>
+          <li><a href="#publications"><svg class="i"><use href="#i-mega"/></svg>Publications</a></li>
+        </ul>
+      </div>
+
+      <div class="f-col">
+        <h4>API &amp; documentation</h4>
+        <ul>
+          <li><a href="/api-docs" target="_blank"><svg class="i"><use href="#i-book"/></svg>Swagger / OpenAPI</a></li>
+          <li><a href="/health" target="_blank"><svg class="i"><use href="#i-gauge"/></svg>Health check</a></li>
+          <li><a href="/api/matches/stats" target="_blank"><span class="mono">/api/matches</span></a></li>
+          <li><a href="/api/feedbacks/stats" target="_blank"><span class="mono">/api/feedbacks</span></a></li>
+          <li><a href="/api/posts/feed" target="_blank"><span class="mono">/api/posts</span></a></li>
+        </ul>
+      </div>
+
+      <div class="f-col">
+        <h4>Équipe WinL9it</h4>
+        <ul>
+          <li><span><i class="dot"></i>User Service</span></li>
+          <li><span><i class="dot"></i>Lost Item Service</span></li>
+          <li><span><i class="dot"></i>Found Item Service</span></li>
+          <li><span class="me"><i class="dot"></i>Matching Service — Dhia Eddine Mnajja</span></li>
+          <li><span><i class="dot"></i>Vérification Service</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      <div class="footer-bottom-inner">
+        <span>© <span id="f-year">2026</span> <b>WinL9it</b> · Projet ESPRIT</span>
+        <div class="stack-chips"><span>Node.js</span><span>Express</span><span>MongoDB</span><span>Mongoose</span><span>Swagger</span><span>Postman</span></div>
+        <span class="keys">Raccourcis : <kbd>/</kbd> rechercher <kbd>Échap</kbd> fermer</span>
+        <button class="btn btn-glass btn-sm" type="button" id="f-top"><svg class="i"><use href="#i-up"/></svg><span>Haut de page</span></button>
+      </div>
+    </div>
+  </footer>
 
   <!-- Panneau de détail -->
   <div class="overlay" id="overlay"></div>
@@ -772,9 +861,11 @@
 
     /* ---------- État de l'API ---------- */
     async function checkHealth() {
-      try { await api('/health'); $('health').textContent = 'API en ligne'; $('health').className = 'health up'; }
-      catch { $('health').textContent = 'API hors ligne'; $('health').className = 'health down'; }
+      try { await api('/health'); $('health').textContent = $('f-health').textContent = 'API en ligne'; $('health').className = 'health up'; $('f-health').style.opacity = 1; }
+      catch { $('health').textContent = $('f-health').textContent = 'API hors ligne'; $('health').className = 'health down'; $('f-health').style.opacity = .6; }
     }
+    $('f-year').textContent = new Date().getFullYear();
+    $('f-top').addEventListener('click', () => scrollTo({ top: 0 }));
 
     /* ---------- Fenêtre de confirmation ---------- */
     function confirmDialog(title, text, okLabel = 'Supprimer') {
