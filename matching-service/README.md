@@ -95,6 +95,20 @@ MONGO_URI=mongodb://localhost:27017/winl9it_matching_db
 | http://localhost:3004/api-docs | Documentation Swagger |
 | http://localhost:3004/health | Health check |
 
+## Données de démonstration et vérification de la base
+
+```bash
+npm run seed -- --reset   # (serveur démarré) charge 16 correspondances DEMO-* et 16 avis via l'API
+npm run check-db          # vérifie l'intégrité des données directement dans MongoDB
+```
+
+- `seed` passe par l'API : toutes les règles métier s'appliquent (score automatique, confirmations
+  qui rejettent les propositions concurrentes, restitutions, rejet automatique par les avis, historique).
+  `--reset` supprime d'abord uniquement les anciennes correspondances `DEMO-*` (et leurs avis).
+- `check-db` contrôle : index uniques, score = moyenne pondérée des critères, statuts valides,
+  historique cohérent avec le cycle de vie, exclusivité des objets confirmés, aucun avis orphelin
+  ni en double, règle du rejet automatique, agrégations.
+
 ## Tests avec Postman
 
 1. Postman → **Import** → les 2 fichiers du dossier `postman/` :
