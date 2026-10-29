@@ -18,4 +18,11 @@ function computeScore(criteria = {}) {
   return Math.round(total * 100) / 100;
 }
 
-module.exports = { computeScore, WEIGHTS };
+/** Niveau de confiance d'une correspondance selon son score */
+function scoreLevel(score) {
+  if (score >= 80) return 'FORT';
+  if (score >= 50) return 'MOYEN';
+  return 'FAIBLE';
+}
+
+module.exports = { computeScore, scoreLevel, WEIGHTS };

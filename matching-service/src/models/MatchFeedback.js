@@ -16,4 +16,7 @@ const matchFeedbackSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Règle métier : un utilisateur ne donne qu'un seul avis par correspondance
+matchFeedbackSchema.index({ matchId: 1, userId: 1 }, { unique: true });
+
 module.exports = mongoose.model('MatchFeedback', matchFeedbackSchema);

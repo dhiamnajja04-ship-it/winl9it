@@ -25,6 +25,31 @@ et une annonce d'objet retrouvé (Found Item Service), avec un score calculé su
 
 Le même CRUD existe pour la 2ᵉ entité : `/api/feedbacks`.
 
+## Métier
+
+### Entité 1 — Match
+
+| Règle / fonctionnalité | Endpoint |
+|---|---|
+| **Cycle de vie** : `PROPOSÉ → CONFIRMÉ → RESTITUÉ`, ou `→ REJETÉ`. `REJETÉ` et `RESTITUÉ` sont finaux. Toute transition interdite → `409` (aussi via `PUT`) | `PATCH /api/matches/:id/status` |
+| Une nouvelle correspondance commence toujours à `PROPOSÉ` | `POST /api/matches` |
+| **Exclusivité** : confirmer une correspondance rejette automatiquement les autres propositions sur le même objet perdu ou retrouvé ; un objet déjà confirmé ailleurs ne peut pas être reconfirmé (`409`) | `PATCH /api/matches/:id/status` |
+| **Suggestions** : meilleures correspondances d'un objet perdu, triées par score, avec niveau de confiance `FORT` (≥ 80) / `MOYEN` (≥ 50) / `FAIBLE` | `GET /api/matches/suggestions/:lostItemId?limit=5` |
+| **Tableau de bord** : total, score moyen, répartition par statut et par catégorie, taux de restitution | `GET /api/matches/stats` |
+
+### Entité 2 — MatchFeedback
+
+| Règle / fonctionnalité | Endpoint |
+|---|---|
+| **Un seul avis** par utilisateur et par correspondance (`409` sinon) | `POST /api/feedbacks` |
+| Pas d'avis sur une correspondance `REJETÉ` (`409`) | `POST /api/feedbacks` |
+| **Rejet automatique** : dès 3 avis, si moins de 50 % sont positifs, la correspondance `PROPOSÉ` passe à `REJETÉ` (réponse : `matchStatus`, `stats`) | `POST /api/feedbacks` |
+| **Fiabilité d'une correspondance** : nb d'avis, précision, note moyenne, verdict `FIABLE` / `MITIGÉ` / `DOUTEUX` / `INSUFFISANT` | `GET /api/feedbacks/stats/:matchId` |
+| **Précision globale du matching**, et par catégorie | `GET /api/feedbacks/stats` |
+
+Dans l'interface web : tableau de bord en haut, et dans le détail d'une correspondance
+(Rechercher par id) les boutons **Confirmer / Rejeter / Marquer restitué** et la zone **Avis des utilisateurs**.
+
 ## Technologies (slide 8)
 
 Node.js · Express.js · MongoDB (Mongoose) · Swagger / OpenAPI · Postman
@@ -72,6 +97,14 @@ MONGO_URI=mongodb://localhost:27017/winl9it_matching_db
 | PUT | `/api/matches/:id` | Modifier (score recalculé) |
 | DELETE | `/api/matches/:id` | Supprimer (+ ses feedbacks) |
 | POST / GET / GET :id / PUT / DELETE | `/api/feedbacks` | CRUD MatchFeedback |
+| PATCH | `/api/matches/:id/status` | Métier — changer le statut |
+| GET | `/api/matches/suggestions/:lostItemId` | Métier — suggestions |
+| GET | `/api/matches/stats` | Métier — tableau de bord |
+| GET | `/api/feedbacks/stats` | Métier — précision globale |
+| GET | `/api/feedbacks/stats/:matchId` | Métier — fiabilité d'une correspondance |
+
+La collection Postman contient 5 dossiers (Health, CRUD Match, CRUD MatchFeedback,
+Match — Métier, MatchFeedback — Métier) : **38 requêtes, 58 assertions**.
 
 Exemple de corps pour l'ajout :
 ```json
@@ -85,7 +118,7 @@ Exemple de corps pour l'ajout :
 ```
 → score = 100×0,3 + 85×0,3 + 90×0,2 + 75×0,2 = **88,5**
 
-Codes d'erreur : `400` données ou id invalides · `404` introuvable · `409` correspondance déjà existante.
+Codes d'erreur : `400` données ou id invalides · `404` introuvable · `409` doublon ou règle métier non respectée.
 
 ## Structure
 
@@ -98,9 +131,10 @@ matching-service/
     ├── app.js                 # Express, routes, Swagger
     ├── config/db.js
     ├── models/                # Match, MatchFeedback
-    ├── controllers/           # Logique CRUD
+    ├── controllers/           # CRUD + métier
     ├── routes/
     ├── middlewares/           # Validation d'id, gestion des erreurs
-    ├── utils/scoring.js       # Calcul du score de correspondance
+    ├── utils/scoring.js       # Calcul du score + niveau de confiance
+    ├── utils/workflow.js      # Cycle de vie (transitions autorisées)
     └── docs/swagger.json
 ```

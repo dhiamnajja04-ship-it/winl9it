@@ -3,12 +3,14 @@
   "info": {
     "title": "WinL9it — Matching Service",
     "version": "1.0.0",
-    "description": "CRUD des correspondances (Match) entre objets perdus et retrouvés, et des retours utilisateurs (MatchFeedback). Responsable : Dhia Eddine Mnajja."
+    "description": "CRUD + métier des correspondances (Match) entre objets perdus et retrouvés, et des retours utilisateurs (MatchFeedback). Responsable : Dhia Eddine Mnajja."
   },
   "servers": [{ "url": "http://localhost:3004" }],
   "tags": [
     { "name": "Matches", "description": "Correspondances objets perdus / retrouvés" },
-    { "name": "Feedbacks", "description": "Retours sur les correspondances" }
+    { "name": "Feedbacks", "description": "Retours sur les correspondances" },
+    { "name": "Matches — Métier", "description": "Cycle de vie, suggestions, tableau de bord" },
+    { "name": "Feedbacks — Métier", "description": "Précision du matching et rejet automatique (≥ 3 avis et < 50 % positifs). Un seul avis par utilisateur et par correspondance (409)." }
   ],
   "paths": {
     "/api/matches": {
@@ -37,6 +39,31 @@
       },
       "delete": { "tags": ["Matches"], "summary": "Supprimer une correspondance", "responses": { "200": { "description": "Supprimée" }, "404": { "description": "Introuvable" } } }
     },
+    "/api/matches/{id}/status": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "patch": {
+        "tags": ["Matches — Métier"], "summary": "Changer le statut (cycle de vie PROPOSÉ → CONFIRMÉ → RESTITUÉ, ou REJETÉ)",
+        "description": "Transitions autorisées : PROPOSÉ → CONFIRMÉ | REJETÉ ; CONFIRMÉ → RESTITUÉ | REJETÉ. REJETÉ et RESTITUÉ sont finaux. Confirmer une correspondance rejette automatiquement les autres propositions sur le même objet perdu ou retrouvé (champ autresRejetees).",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"], "example": "CONFIRMÉ" } } } } } },
+        "responses": { "200": { "description": "Statut modifié" }, "400": { "description": "Statut invalide" }, "404": { "description": "Introuvable" }, "409": { "description": "Transition interdite ou objet déjà confirmé ailleurs" } }
+      }
+    },
+    "/api/matches/stats": {
+      "get": {
+        "tags": ["Matches — Métier"], "summary": "Tableau de bord : total, score moyen, répartition par statut et par catégorie, taux de restitution",
+        "responses": { "200": { "description": "Statistiques" } }
+      }
+    },
+    "/api/matches/suggestions/{lostItemId}": {
+      "get": {
+        "tags": ["Matches — Métier"], "summary": "Meilleures correspondances pour un objet perdu (PROPOSÉ/CONFIRMÉ, triées par score, avec niveau FORT/MOYEN/FAIBLE)",
+        "parameters": [
+          { "name": "lostItemId", "in": "path", "required": true, "schema": { "type": "string", "example": "LOST-001" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 5, "maximum": 20 } }
+        ],
+        "responses": { "200": { "description": "Suggestions" } }
+      }
+    },
     "/api/feedbacks": {
       "post": {
         "tags": ["Feedbacks"], "summary": "Ajouter un feedback",
@@ -58,6 +85,19 @@
         "responses": { "200": { "description": "Modifié" } }
       },
       "delete": { "tags": ["Feedbacks"], "summary": "Supprimer un feedback", "responses": { "200": { "description": "Supprimé" } } }
+    },
+    "/api/feedbacks/stats": {
+      "get": {
+        "tags": ["Feedbacks — Métier"], "summary": "Précision globale du matching (avis positifs / total), note moyenne, par catégorie",
+        "responses": { "200": { "description": "Statistiques" } }
+      }
+    },
+    "/api/feedbacks/stats/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "description": "Id de la correspondance (matchId)", "schema": { "type": "string" } }],
+      "get": {
+        "tags": ["Feedbacks — Métier"], "summary": "Fiabilité d'une correspondance d'après ses avis (verdict FIABLE / MITIGÉ / DOUTEUX / INSUFFISANT)",
+        "responses": { "200": { "description": "Statistiques" }, "404": { "description": "Correspondance introuvable" } }
+      }
     }
   },
   "components": {

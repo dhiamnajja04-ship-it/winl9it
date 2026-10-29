@@ -63,6 +63,21 @@
     #toast.show { opacity: 1; transform: none; }
     #toast.ok { background: var(--teal); } #toast.err { background: var(--danger); }
     .stack { display: grid; gap: 20px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
+    .kpi { background: #f7faff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+    .kpi b { display: block; font-size: 20px; color: var(--navy); }
+    .kpi span { font-size: 12px; color: var(--muted); }
+    .sub { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
+    .btn-ok { background: #e4f6f3; color: var(--teal); }
+    .btn-purple { background: #ece9fb; color: #5b45c7; }
+    .fb { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
+    .fb h3 { margin: 0 0 8px; font-size: 14px; color: var(--navy); }
+    .fb form { display: grid; grid-template-columns: 1fr 1fr 80px auto; gap: 8px; align-items: end; }
+    @media (max-width: 600px) { .fb form { grid-template-columns: 1fr 1fr; } }
+    .v-FIABLE { background: #e4f6f3; color: var(--teal); }
+    .v-MITIGÉ { background: #fff3dc; color: #a26b00; }
+    .v-DOUTEUX { background: #fde8e8; color: var(--danger); }
+    .v-INSUFFISANT { background: #eef3fa; color: var(--muted); }
   </style>
 </head>
 <body>
@@ -102,7 +117,7 @@
           </div>
           <div>
             <label for="status">Statut</label>
-            <select id="status">
+            <select id="status" disabled title="Une nouvelle correspondance commence toujours à PROPOSÉ">
               <option>PROPOSÉ</option><option>CONFIRMÉ</option><option>REJETÉ</option><option>RESTITUÉ</option>
             </select>
           </div>
@@ -131,6 +146,13 @@
     </section>
 
     <div class="stack">
+      <!-- ===== Tableau de bord (métier) ===== -->
+      <section class="card">
+        <h2>Tableau de bord</h2>
+        <div class="kpis" id="kpis"><div class="kpi"><span>Chargement…</span></div></div>
+        <div class="sub" id="kpi-sub"></div>
+      </section>
+
       <!-- ===== Recherche par id ===== -->
       <section class="card">
         <h2>Rechercher une correspondance par id</h2>
@@ -162,6 +184,13 @@
     const API = '/api/matches';
     const $ = (id) => document.getElementById(id);
     const WEIGHTS = { categoryScore: .3, descriptionScore: .3, locationScore: .2, dateScore: .2 };
+    // Cycle de vie (identique à src/utils/workflow.js)
+    const TRANSITIONS = { 'PROPOSÉ': ['CONFIRMÉ', 'REJETÉ'], 'CONFIRMÉ': ['RESTITUÉ', 'REJETÉ'], 'REJETÉ': [], 'RESTITUÉ': [] };
+    const STATUS_BTN = {
+      'CONFIRMÉ': { label: '✓ Confirmer', cls: 'btn-ok' },
+      'REJETÉ': { label: '✗ Rejeter', cls: 'btn-danger' },
+      'RESTITUÉ': { label: '↩ Marquer restitué', cls: 'btn-purple' },
+    };
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
     function toast(msg, ok = true) {
@@ -203,6 +232,7 @@
       $('submit-btn').textContent = edit ? 'Enregistrer les modifications' : 'Ajouter';
       $('cancel-btn').hidden = !edit;
       $('reset-btn').hidden = edit;
+      $('status').disabled = !edit;
       if (edit) {
         ['lostItemId', 'foundItemId', 'category', 'status', 'notes'].forEach((k) => ($(k).value = match[k] ?? ''));
         Object.keys(WEIGHTS).forEach((k) => ($(k).value = match.criteria?.[k] ?? 0));
@@ -219,9 +249,9 @@
       const id = $('matchId').value;
       try {
         const r = await api(id ? `${API}/${id}` : API, { method: id ? 'PUT' : 'POST', body: JSON.stringify(readForm()) });
-        toast(r.message);
+        toast(r.message + (r.autresRejetees ? ` — ${r.autresRejetees} proposition(s) concurrente(s) rejetée(s)` : ''));
         setMode(false);
-        loadList();
+        refreshAll();
         if ($('search-id').value === r.data._id) showDetail(r.data);
       } catch (err) { toast(err.message, false); }
     });
@@ -245,8 +275,42 @@
         <div class="actions">
           <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
           <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
-        </div></div>`;
+          ${(TRANSITIONS[m.status] || []).map((s) =>
+            `<button class="${STATUS_BTN[s].cls}" data-status="${s}" data-id="${esc(m._id)}">${STATUS_BTN[s].label}</button>`).join('')}
+        </div>
+        <div class="fb" id="fb-zone"></div></div>`;
+      loadFeedbacks(m);
     }
+
+    // ---- Métier : avis (MatchFeedback) de la correspondance affichée
+    async function loadFeedbacks(m) {
+      try {
+        const s = (await api(`/api/feedbacks/stats/${m._id}`)).data;
+        $('fb-zone').innerHTML = `
+          <h3>Avis des utilisateurs <span class="pill v-${esc(s.verdict)}">${esc(s.verdict)}</span></h3>
+          <div class="sub" style="margin:0 0 8px">${s.total} avis · ${s.positifs} 👍 / ${s.negatifs} 👎 ·
+            précision ${s.tauxPrecision} % · note moyenne ${s.noteMoyenne ?? '—'} / 5</div>
+          ${m.status === 'REJETÉ' ? '<div class="sub">Correspondance rejetée : plus d\'avis possible.</div>' : `
+          <form id="fb-form" data-match="${esc(m._id)}">
+            <div><label>Utilisateur</label><input name="userId" required placeholder="USER-001" /></div>
+            <div><label>Avis</label><select name="isCorrect"><option value="true">C'est bien mon objet</option><option value="false">Ce n'est pas mon objet</option></select></div>
+            <div><label>Note</label><select name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
+            <button class="btn-primary" type="submit">Donner mon avis</button>
+          </form>
+          <div class="sub">Règle : 1 avis par utilisateur · rejet automatique si ≥ 3 avis et moins de 50 % positifs.</div>`}`;
+      } catch (err) { $('fb-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+    }
+    document.addEventListener('submit', async (e) => {
+      if (e.target.id !== 'fb-form') return;
+      e.preventDefault();
+      const f = e.target, id = f.dataset.match;
+      try {
+        const r = await api('/api/feedbacks', { method: 'POST', body: JSON.stringify({
+          matchId: id, userId: f.userId.value.trim(), isCorrect: f.isCorrect.value === 'true', rating: +f.rating.value }) });
+        toast(r.message, r.matchStatus !== 'REJETÉ');
+        searchById(id); refreshAll();
+      } catch (err) { toast(err.message, false); }
+    });
     async function searchById(id) {
       $('search-id').value = id;
       try { showDetail((await api(`${API}/${encodeURIComponent(id)}`)).data); }
@@ -275,13 +339,35 @@
         $('tbody').innerHTML = `<tr><td colspan="6" class="empty">${esc(err.message)}</td></tr>`;
       }
     }
-    $('refresh-btn').addEventListener('click', loadList);
+    // ---- Métier : tableau de bord
+    async function loadStats() {
+      try {
+        const [m, f] = await Promise.all([api(`${API}/stats`), api('/api/feedbacks/stats')]);
+        const s = m.data;
+        $('kpis').innerHTML = [
+          [s.total, 'Correspondances'], [s.scoreMoyen, 'Score moyen'],
+          [s.parStatut['CONFIRMÉ'], 'Confirmées'], [s.parStatut['RESTITUÉ'], 'Restituées'],
+          [s.tauxRestitution + ' %', 'Taux de restitution'], [f.data.tauxPrecision + ' %', 'Précision (avis)'],
+        ].map(([v, l]) => `<div class="kpi"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
+        $('kpi-sub').textContent = `Proposées : ${s.parStatut['PROPOSÉ']} · Rejetées : ${s.parStatut['REJETÉ']} · ${f.data.total} avis utilisateurs`;
+      } catch (err) { $('kpis').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+    }
+    const refreshAll = () => { loadList(); loadStats(); };
+    $('refresh-btn').addEventListener('click', refreshAll);
 
-    // ---- Modifier / Supprimer (délégation d'événements)
+    // ---- Modifier / Supprimer / Changer le statut (délégation d'événements)
     document.addEventListener('click', async (e) => {
-      const t = e.target.closest('[data-edit],[data-del],[data-search]');
+      const t = e.target.closest('[data-edit],[data-del],[data-search],[data-status]');
       if (!t) return;
       if (t.dataset.search) return searchById(t.dataset.search);
+      if (t.dataset.status) {
+        try {
+          const r = await api(`${API}/${t.dataset.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: t.dataset.status }) });
+          toast(r.message + (r.autresRejetees ? ` — ${r.autresRejetees} proposition(s) concurrente(s) rejetée(s)` : ''));
+          showDetail(r.data); refreshAll();
+        } catch (err) { toast(err.message, false); }
+        return;
+      }
       if (t.dataset.edit) {
         try { setMode(true, (await api(`${API}/${t.dataset.edit}`)).data); }
         catch (err) { toast(err.message, false); }
@@ -293,12 +379,12 @@
           toast(r.message);
           if ($('matchId').value === t.dataset.del) setMode(false);
           if ($('search-id').value === t.dataset.del) $('result').innerHTML = '';
-          loadList();
+          refreshAll();
         } catch (err) { toast(err.message, false); }
       }
     });
 
-    loadList();
+    refreshAll();
   </script>
 </body>
 </html>
