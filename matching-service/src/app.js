@@ -25,7 +25,20 @@ app.use('/api/matches', matchRoutes);
 app.use('/api/feedbacks', feedbackRoutes);
 
 // Documentation Swagger / OpenAPI (slide 8)
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerDocument, {
+    customSiteTitle: 'WinL9it — Matching Service API',
+    customfavIcon: '/logo.svg',
+    customCss: `
+      .swagger-ui .topbar { background: linear-gradient(135deg, #0b3a7e, #0a2c5f); padding: 8px 0; }
+      .swagger-ui .topbar .link { content: url('/logo-full.svg'); height: 44px; background: #fff; padding: 4px 10px; border-radius: 10px; }
+      .swagger-ui .topbar .download-url-wrapper { display: none; }
+      .swagger-ui .info .title { color: #0b3a7e; }
+    `,
+  })
+);
 
 app.use((req, res) => res.status(404).json({ success: false, message: `Route introuvable : ${req.originalUrl}` }));
 app.use(errorHandler);

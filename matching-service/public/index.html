@@ -4,205 +4,363 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>WinL9it — Matching Service</title>
+  <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <style>
     :root {
-      --navy: #0b3a7e; --blue: #1a73e8; --teal: #16a394; --bg: #f3f7fd;
-      --card: #ffffff; --line: #dde6f3; --text: #1d2a3d; --muted: #66758a;
-      --danger: #d93a3a; --warn: #e8a21a;
+      --navy: #0b3a7e; --navy-2: #0a2c5f; --blue: #1f6feb; --teal: #12a58c; --teal-soft: #e3f6f1;
+      --bg: #f4f7fb; --card: #ffffff; --soft: #f7f9fc; --line: #e3e9f2; --line-2: #d3dce9;
+      --text: #14213d; --muted: #6b7a90; --danger: #d6455d; --danger-soft: #fdecef;
+      --amber: #c98a0b; --amber-soft: #fff4dc; --violet: #6a4fd8; --violet-soft: #eeeafe; --blue-soft: #e8f0fe;
+      --shadow: 0 1px 2px rgba(16, 38, 77, .04), 0 6px 24px rgba(16, 38, 77, .06);
+      --radius: 16px;
+      color-scheme: light;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0c1424; --card: #121d31; --soft: #17243b; --line: #22324d; --line-2: #2c3f5e;
+        --text: #e6edf7; --muted: #93a3bb; --navy: #9cc0ff; --blue: #5b9bff;
+        --teal-soft: #0f3a35; --danger-soft: #3d1a24; --amber-soft: #3a2d0e; --violet-soft: #2a2350; --blue-soft: #16294d;
+        --shadow: 0 1px 2px rgba(0,0,0,.3), 0 8px 28px rgba(0,0,0,.25);
+        color-scheme: dark;
+      }
     }
     * { box-sizing: border-box; }
-    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
-    header { background: var(--navy); color: #fff; padding: 18px 24px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
-    header h1 { margin: 0; font-size: 26px; letter-spacing: -.5px; }
-    header h1 span { color: #5fd3c4; }
-    header p { margin: 0; opacity: .8; font-size: 14px; }
-    header a { color: #bfe1ff; margin-left: auto; font-size: 14px; }
-    main { max-width: 1150px; margin: 24px auto; padding: 0 16px; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
-    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
-    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(11,58,126,.05); }
-    .card h2 { margin: 0 0 14px; font-size: 17px; color: var(--navy); display: flex; align-items: center; gap: 8px; }
-    .badge-mode { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: #e4f6f3; color: var(--teal); font-weight: 600; }
-    .badge-mode.edit { background: #fff3dc; color: #a26b00; }
-    label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: var(--muted); }
-    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 14px; background: #fff; }
-    input:focus, select:focus, textarea:focus { outline: 2px solid #b7d3fb; border-color: var(--blue); }
-    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    fieldset { border: 1px dashed var(--line); border-radius: 10px; padding: 4px 12px 12px; margin: 12px 0 0; }
-    legend { font-size: 12px; font-weight: 700; color: var(--teal); padding: 0 6px; }
-    .score-preview { margin-top: 10px; font-size: 13px; color: var(--muted); }
-    .score-preview b { color: var(--navy); font-size: 16px; }
-    button { font: inherit; font-size: 14px; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer; font-weight: 600; }
-    .btn-primary { background: var(--blue); color: #fff; }
-    .btn-ghost { background: #eef3fa; color: var(--navy); }
-    .btn-danger { background: #fde8e8; color: var(--danger); }
-    .btn-edit { background: #fff3dc; color: #a26b00; }
-    .actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    body { margin: 0; font: 14px/1.5 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+    [hidden] { display: none !important; }
+
+    /* ---------- Barre du haut ---------- */
+    .topbar { position: sticky; top: 0; z-index: 20; background: color-mix(in srgb, var(--card) 85%, transparent); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+    .topbar-inner { max-width: 1240px; margin: 0 auto; padding: 10px 20px; display: flex; align-items: center; gap: 14px; }
+    .brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: inherit; }
+    .brand img { width: 38px; height: 38px; }
+    .brand-name { font-weight: 800; font-size: 20px; letter-spacing: -.6px; color: var(--navy); line-height: 1; }
+    .brand-name span { color: var(--teal); }
+    .brand-sub { font-size: 10.5px; font-weight: 600; letter-spacing: 1.6px; color: var(--muted); text-transform: uppercase; }
+    .topbar nav { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+    .topbar nav a { color: var(--muted); text-decoration: none; font-weight: 600; font-size: 13px; padding: 7px 10px; border-radius: 8px; }
+    .topbar nav a:hover { background: var(--soft); color: var(--text); }
+    .health { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 99px; background: var(--soft); color: var(--muted); }
+    .health::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+    .health.up { background: var(--teal-soft); color: var(--teal); }
+    .health.down { background: var(--danger-soft); color: var(--danger); }
+
+    /* ---------- Bandeau + tableau de bord ---------- */
+    .hero { background: radial-gradient(1200px 300px at 85% -20%, rgba(18,165,140,.45), transparent 60%), linear-gradient(135deg, #0b3a7e, #0a2c5f 60%, #0b3a7e); color: #fff; }
+    .hero-inner { max-width: 1240px; margin: 0 auto; padding: 28px 20px 70px; }
+    .hero h1 { margin: 0; font-size: 26px; letter-spacing: -.6px; font-weight: 800; }
+    .hero p { margin: 4px 0 20px; color: #c7d6ee; max-width: 640px; }
+    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+    .kpi { background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 14px 16px; }
+    .kpi b { display: block; font-size: 26px; font-weight: 800; letter-spacing: -.5px; }
+    .kpi span { font-size: 12.5px; color: #c7d6ee; }
+    .kpi.accent { background: linear-gradient(135deg, rgba(18,165,140,.55), rgba(18,165,140,.25)); border-color: rgba(18,165,140,.6); }
+    .hero .sub { color: #c7d6ee; margin-top: 12px; font-size: 12.5px; }
+
+    /* ---------- Mise en page ---------- */
+    main { max-width: 1240px; margin: -46px auto 40px; padding: 0 20px; display: grid; grid-template-columns: minmax(360px, 420px) 1fr; gap: 20px; align-items: start; }
+    @media (max-width: 960px) { main { grid-template-columns: minmax(0, 1fr); } }
+    @media (max-width: 560px) {
+      .topbar nav a[href="/health"], .brand-sub { display: none; }
+      .hero-inner, main, .topbar-inner { padding-left: 16px; padding-right: 16px; }
+      .card { padding: 16px; }
+      .search { flex-wrap: wrap; } .search button { width: 100%; }
+    }
+    .stack { display: grid; gap: 20px; min-width: 0; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); min-width: 0; }
+    .card-head { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; }
+    .card-head h2 { margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -.2px; }
+    .card-head .ico { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--blue-soft); color: var(--blue); flex: none; }
+    .card-head .ico svg { width: 18px; height: 18px; }
+    .card-head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .badge { font-size: 11px; font-weight: 700; padding: 3px 9px; border-radius: 99px; background: var(--teal-soft); color: var(--teal); letter-spacing: .3px; }
+    .badge.edit { background: var(--amber-soft); color: var(--amber); }
+    .badge.count { background: var(--soft); color: var(--muted); }
+
+    /* ---------- Onglets ---------- */
+    .tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--soft); border: 1px solid var(--line); padding: 4px; border-radius: 12px; margin-bottom: 18px; }
+    .tab { background: transparent; color: var(--muted); padding: 8px 10px; border-radius: 9px; font-weight: 600; }
+    .tab.active { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(16,38,77,.12); }
+
+    /* ---------- Formulaires ---------- */
+    label { display: block; font-size: 12.5px; font-weight: 600; margin: 12px 0 5px; color: var(--muted); }
+    input, select, textarea { width: 100%; min-width: 0; padding: 9px 11px; border: 1px solid var(--line-2); border-radius: 10px; font: inherit; background: var(--card); color: var(--text); transition: border-color .15s, box-shadow .15s; }
+    textarea { resize: vertical; }
+    input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue); box-shadow: 0 0 0 3px color-mix(in srgb, var(--blue) 20%, transparent); }
+    select:disabled { opacity: .6; }
+    .row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .row.three { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.2fr); }
+    @media (max-width: 420px) { .row.three { grid-template-columns: repeat(2, minmax(0, 1fr)); } .row.three > :last-child { grid-column: 1 / -1; } }
+    .health { white-space: nowrap; }
+    .group { background: var(--soft); border: 1px solid var(--line); border-radius: 12px; padding: 4px 14px 14px; margin-top: 14px; }
+    .group-title { font-size: 11.5px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; color: var(--teal); margin: 10px 0 0; display: flex; align-items: center; gap: 6px; }
+    .score-live { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+    .score-live b { font-size: 22px; font-weight: 800; color: var(--navy); min-width: 64px; }
+    .score-live .meter { flex: 1; height: 10px; }
+
+    /* ---------- Boutons ---------- */
+    button { font: inherit; font-weight: 600; border: 0; border-radius: 10px; padding: 9px 15px; cursor: pointer; transition: transform .05s, filter .15s, background .15s; }
+    button:hover { filter: brightness(.97); }
+    button:active { transform: translateY(1px); }
+    button:disabled { opacity: .4; cursor: default; }
+    .btn-primary { background: var(--blue); color: #fff; box-shadow: 0 2px 8px color-mix(in srgb, var(--blue) 35%, transparent); }
+    .btn-teal { background: var(--teal); color: #fff; box-shadow: 0 2px 8px rgba(18,165,140,.3); }
+    .btn-ghost { background: var(--soft); color: var(--text); border: 1px solid var(--line); }
+    .btn-danger { background: var(--danger-soft); color: var(--danger); }
+    .btn-edit { background: var(--amber-soft); color: var(--amber); }
+    .btn-ok { background: var(--teal-soft); color: var(--teal); }
+    .btn-purple { background: var(--violet-soft); color: var(--violet); }
+    .btn-sm { padding: 6px 10px; font-size: 12.5px; border-radius: 8px; }
+    .actions { display: flex; gap: 8px; margin-top: 18px; flex-wrap: wrap; }
+
+    /* ---------- Jauges de score ---------- */
+    .meter { height: 7px; border-radius: 99px; background: var(--line); overflow: hidden; }
+    .meter i { display: block; height: 100%; border-radius: inherit; background: var(--danger); transition: width .4s ease; }
+    .meter.moyen i { background: #e0a21b; }
+    .meter.fort i { background: var(--teal); }
+    .lvl { font-size: 10.5px; font-weight: 800; letter-spacing: .5px; padding: 2px 7px; border-radius: 6px; }
+    .lvl.fort { background: var(--teal-soft); color: var(--teal); }
+    .lvl.moyen { background: var(--amber-soft); color: var(--amber); }
+    .lvl.faible { background: var(--danger-soft); color: var(--danger); }
+    .crit { display: grid; grid-template-columns: 92px 1fr 34px; gap: 10px; align-items: center; font-size: 12.5px; margin: 7px 0; }
+    .crit span { color: var(--muted); }
+    .crit b { text-align: right; }
+    .crit small { grid-column: 2 / 4; margin-top: -6px; color: var(--muted); font-size: 11.5px; }
+
+    /* ---------- Recherche + liste ---------- */
     .search { display: flex; gap: 8px; }
-    .search input { flex: 1; }
-    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
-    th { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; padding: 8px; border-bottom: 2px solid var(--line); }
-    td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
-    td.id { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted); cursor: pointer; }
-    td.id:hover { color: var(--blue); }
-    .table-wrap { overflow-x: auto; }
-    .score { font-weight: 700; }
-    .pill { padding: 3px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
-    .s-PROPOSÉ { background: #e7f0fe; color: var(--blue); }
-    .s-CONFIRMÉ { background: #e4f6f3; color: var(--teal); }
-    .s-REJETÉ { background: #fde8e8; color: var(--danger); }
-    .s-RESTITUÉ { background: #ece9fb; color: #5b45c7; }
-    .row-actions { display: flex; gap: 6px; }
-    .row-actions button { padding: 6px 10px; font-size: 12.5px; }
-    #result { margin-top: 12px; }
-    .detail { background: #f7faff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 13.5px; }
-    .detail dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 10px; margin: 0; }
-    .detail dt { color: var(--muted); font-weight: 600; }
-    .detail dd { margin: 0; word-break: break-all; }
-    .empty { color: var(--muted); text-align: center; padding: 22px; }
-    #toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 16px; border-radius: 10px; color: #fff; font-weight: 600; font-size: 14px; opacity: 0; transform: translateY(10px); transition: .25s; max-width: 380px; z-index: 10; }
-    #toast.show { opacity: 1; transform: none; }
-    #toast.ok { background: var(--teal); } #toast.err { background: var(--danger); }
-    .stack { display: grid; gap: 20px; }
-    .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; }
-    .kpi { background: #f7faff; border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
-    .kpi b { display: block; font-size: 20px; color: var(--navy); }
-    .kpi span { font-size: 12px; color: var(--muted); }
-    .sub { font-size: 12.5px; color: var(--muted); margin-top: 10px; }
-    .btn-ok { background: #e4f6f3; color: var(--teal); }
-    .btn-purple { background: #ece9fb; color: #5b45c7; }
-    .fb { margin-top: 14px; border-top: 1px dashed var(--line); padding-top: 12px; }
-    .fb h3 { margin: 0 0 8px; font-size: 14px; color: var(--navy); }
-    .fb form { display: grid; grid-template-columns: 1fr 1fr 80px auto; gap: 8px; align-items: end; }
-    @media (max-width: 600px) { .fb form { grid-template-columns: 1fr 1fr; } }
-    .v-FIABLE { background: #e4f6f3; color: var(--teal); }
-    .v-MITIGÉ { background: #fff3dc; color: #a26b00; }
-    .v-DOUTEUX { background: #fde8e8; color: var(--danger); }
-    .v-INSUFFISANT { background: #eef3fa; color: var(--muted); }
-    .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
-    .toolbar input { flex: 1; min-width: 160px; }
+    .search input { flex: 1; font-family: ui-monospace, "Cascadia Code", monospace; font-size: 13px; }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 180px; }
     .toolbar select { width: auto; }
-    .pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; font-size: 13px; color: var(--muted); }
-    .pager button { padding: 6px 10px; font-size: 12.5px; }
-    .pager button:disabled { opacity: .4; cursor: default; }
-    .timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line); font-size: 13px; }
-    .timeline li { margin: 0 0 8px; position: relative; }
-    .timeline li::before { content: ''; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
-    .timeline small { color: var(--muted); display: block; }
-    .auto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    @media (max-width: 500px) { .auto-grid { grid-template-columns: 1fr; } }
-    .auto-result { margin-top: 12px; }
+    .table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th { text-align: left; color: var(--muted); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px; padding: 10px 12px; background: var(--soft); border-bottom: 1px solid var(--line); white-space: nowrap; }
+    td { padding: 11px 12px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: 0; }
+    tbody tr:hover td { background: color-mix(in srgb, var(--blue) 4%, transparent); }
+    .chip-id { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 11.5px; color: var(--blue); background: var(--blue-soft); padding: 3px 7px; border-radius: 6px; cursor: pointer; white-space: nowrap; }
+    .pair { display: flex; flex-direction: column; line-height: 1.35; }
+    .pair small { color: var(--muted); font-size: 12px; }
+    .obj { display: flex; align-items: center; gap: 6px; white-space: nowrap; font-weight: 500; }
+    .obj::before { content: ''; width: 7px; height: 7px; border-radius: 50%; flex: none; }
+    .obj.l::before { background: var(--danger); }
+    .obj.f::before { background: var(--teal); }
+    .score-cell { min-width: 110px; }
+    .score-cell b { font-size: 14px; }
+    .score-cell .meter { margin-top: 5px; height: 5px; }
+    .row-actions { display: flex; gap: 6px; justify-content: flex-end; }
+    .pager { display: flex; gap: 10px; align-items: center; justify-content: flex-end; margin-top: 12px; font-size: 13px; color: var(--muted); }
+
+    /* ---------- Statuts ---------- */
+    .pill { display: inline-flex; align-items: center; gap: 5px; padding: 3px 10px; border-radius: 99px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .pill::before { content: ''; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+    .s-PROPOSÉ { background: var(--blue-soft); color: var(--blue); }
+    .s-CONFIRMÉ { background: var(--teal-soft); color: var(--teal); }
+    .s-REJETÉ { background: var(--danger-soft); color: var(--danger); }
+    .s-RESTITUÉ { background: var(--violet-soft); color: var(--violet); }
+    .v-FIABLE { background: var(--teal-soft); color: var(--teal); }
+    .v-MITIGÉ { background: var(--amber-soft); color: var(--amber); }
+    .v-DOUTEUX { background: var(--danger-soft); color: var(--danger); }
+    .v-INSUFFISANT { background: var(--soft); color: var(--muted); }
+
+    /* ---------- Détail ---------- */
+    #result { margin-top: 14px; }
+    .detail { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .detail-head { display: flex; align-items: center; gap: 14px; padding: 16px; background: var(--soft); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+    .big-score { font-size: 30px; font-weight: 800; letter-spacing: -1px; color: var(--navy); line-height: 1; }
+    .big-score small { font-size: 13px; font-weight: 600; color: var(--muted); letter-spacing: 0; }
+    .detail-head .pair { font-weight: 600; }
+    .detail-head .right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+    .detail-body { padding: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 640px) { .detail-body { grid-template-columns: 1fr; } }
+    .detail dl { display: grid; grid-template-columns: 90px 1fr; gap: 6px 10px; margin: 0; font-size: 13px; }
+    .detail dt { color: var(--muted); }
+    .detail dd { margin: 0; word-break: break-word; }
+    .detail .actions { padding: 0 16px 16px; margin: 0; }
+    .section { padding: 16px; border-top: 1px solid var(--line); }
+    .section h3 { margin: 0 0 10px; font-size: 13.5px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .mono { font-family: ui-monospace, "Cascadia Code", monospace; font-size: 12px; }
+
+    .timeline { list-style: none; margin: 0; padding: 0 0 0 18px; position: relative; font-size: 13px; }
+    .timeline::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: var(--line); }
+    .timeline li { margin: 0 0 12px; position: relative; }
+    .timeline li::before { content: ''; position: absolute; left: -18px; top: 5px; width: 12px; height: 12px; border-radius: 50%; background: var(--card); border: 3px solid var(--teal); }
+    .timeline small { color: var(--muted); display: block; margin-top: 2px; }
+
+    .fb-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+    .fb-stats div { background: var(--soft); border: 1px solid var(--line); border-radius: 10px; padding: 8px 10px; }
+    .fb-stats b { display: block; font-size: 17px; }
+    .fb-stats span { font-size: 11.5px; color: var(--muted); }
+    #fb-form { display: grid; grid-template-columns: 1fr 1.3fr 70px auto; gap: 8px; align-items: end; }
+    #fb-form label { margin-top: 0; }
+    @media (max-width: 640px) { #fb-form, .fb-stats { grid-template-columns: 1fr 1fr; } }
+    .hint { font-size: 12px; color: var(--muted); margin-top: 10px; display: flex; gap: 6px; align-items: flex-start; }
+
+    /* ---------- Matching auto ---------- */
+    .auto-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+    .auto-grid .group { margin-top: 0; }
+    .group.lost .group-title { color: var(--danger); }
+    .auto-result { margin-top: 16px; }
+    .auto-card { border: 1px solid var(--line); border-radius: 14px; padding: 16px; background: linear-gradient(180deg, var(--teal-soft), transparent 70%); }
+    .auto-card .top { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }
+
+    .empty { color: var(--muted); text-align: center; padding: 26px 12px; }
+    .empty svg { width: 34px; height: 34px; opacity: .5; display: block; margin: 0 auto 6px; }
+
+    /* ---------- Notification ---------- */
+    #toast { position: fixed; bottom: 22px; right: 22px; padding: 12px 16px 12px 14px; border-radius: 12px; color: #fff; font-weight: 600; font-size: 13.5px; opacity: 0; transform: translateY(12px); transition: .25s; max-width: 400px; z-index: 50; box-shadow: 0 10px 30px rgba(0,0,0,.2); display: flex; gap: 10px; align-items: center; pointer-events: none; }
+    #toast.show { opacity: 1; transform: none; }
+    #toast.ok { background: #0f8f79; } #toast.err { background: var(--danger); }
+    #toast.ok::before { content: '✓'; } #toast.err::before { content: '!'; }
+    #toast::before { width: 22px; height: 22px; border-radius: 50%; background: rgba(255,255,255,.2); display: grid; place-items: center; flex: none; font-weight: 800; }
+
+    footer { text-align: center; color: var(--muted); font-size: 12px; padding: 0 20px 30px; }
   </style>
 </head>
 <body>
-  <header>
-    <h1>Win<span>L9it</span></h1>
-    <p>Matching Service — gestion des correspondances objets perdus / retrouvés</p>
-    <a href="/api-docs" target="_blank">Swagger API ↗</a>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" href="/">
+        <img src="/logo.svg" alt="" />
+        <div>
+          <div class="brand-name">Win<span>L9it</span></div>
+          <div class="brand-sub">Matching Service</div>
+        </div>
+      </a>
+      <nav>
+        <span class="health" id="health">API…</span>
+        <a href="/api-docs" target="_blank">Swagger ↗</a>
+        <a href="/health" target="_blank">Health</a>
+      </nav>
+    </div>
   </header>
 
+  <!-- ===== Bandeau + tableau de bord (métier) ===== -->
+  <section class="hero">
+    <div class="hero-inner">
+      <h1>Tableau de bord du matching</h1>
+      <p>Rapprocher les objets perdus et les objets retrouvés grâce à un score sur 4 critères : catégorie, description, lieu et date.</p>
+      <div class="kpis" id="kpis"><div class="kpi"><b>…</b><span>Chargement</span></div></div>
+      <div class="sub" id="kpi-sub"></div>
+    </div>
+  </section>
+
   <main>
+    <!-- ===== Colonne gauche : saisie ===== -->
     <div class="stack">
-    <!-- ===== Formulaire Ajout / Modification ===== -->
-    <section class="card">
-      <h2>
-        <span id="form-title">Ajouter une correspondance</span>
-        <span id="mode-badge" class="badge-mode">AJOUT</span>
-      </h2>
-      <form id="match-form" autocomplete="off">
-        <input type="hidden" id="matchId" />
-        <div class="row">
-          <div>
-            <label for="lostItemId">Id objet perdu *</label>
-            <input id="lostItemId" required placeholder="LOST-001" />
-          </div>
-          <div>
-            <label for="foundItemId">Id objet retrouvé *</label>
-            <input id="foundItemId" required placeholder="FOUND-001" />
-          </div>
+      <section class="card">
+        <div class="tabs" role="tablist">
+          <button type="button" class="tab active" data-tab="manual">Saisie manuelle</button>
+          <button type="button" class="tab" data-tab="auto">Matching automatique</button>
         </div>
 
-        <div class="row">
-          <div>
-            <label for="category">Catégorie *</label>
-            <select id="category" required>
-              <option>Accessoires</option><option>Clés</option><option>Électronique</option>
-              <option>Documents</option><option>Vêtements</option><option>Portefeuille</option><option>Autre</option>
-            </select>
+        <!-- Ajout / Modification -->
+        <div id="pane-manual">
+          <div class="card-head">
+            <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></div>
+            <h2 id="form-title">Ajouter une correspondance</h2>
+            <div class="right"><span id="mode-badge" class="badge">AJOUT</span></div>
           </div>
-          <div>
-            <label for="status">Statut</label>
-            <select id="status" disabled title="Une nouvelle correspondance commence toujours à PROPOSÉ">
-              <option>PROPOSÉ</option><option>CONFIRMÉ</option><option>REJETÉ</option><option>RESTITUÉ</option>
-            </select>
+          <form id="match-form" autocomplete="off">
+            <input type="hidden" id="matchId" />
+            <div class="row">
+              <div><label for="lostItemId">Id objet perdu *</label><input id="lostItemId" required placeholder="LOST-001" /></div>
+              <div><label for="foundItemId">Id objet retrouvé *</label><input id="foundItemId" required placeholder="FOUND-001" /></div>
+            </div>
+            <div class="row">
+              <div>
+                <label for="category">Catégorie *</label>
+                <select id="category" required>
+                  <option>Accessoires</option><option>Clés</option><option>Électronique</option>
+                  <option>Documents</option><option>Vêtements</option><option>Portefeuille</option><option>Autre</option>
+                </select>
+              </div>
+              <div>
+                <label for="status">Statut</label>
+                <select id="status" disabled title="Une nouvelle correspondance commence toujours à PROPOSÉ">
+                  <option>PROPOSÉ</option><option>CONFIRMÉ</option><option>REJETÉ</option><option>RESTITUÉ</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="group">
+              <div class="group-title">Critères de matching (0 – 100)</div>
+              <div class="row">
+                <div><label for="categoryScore">Catégorie · 30 %</label><input id="categoryScore" type="number" min="0" max="100" value="0" /></div>
+                <div><label for="descriptionScore">Description · 30 %</label><input id="descriptionScore" type="number" min="0" max="100" value="0" /></div>
+                <div><label for="locationScore">Lieu · 20 %</label><input id="locationScore" type="number" min="0" max="100" value="0" /></div>
+                <div><label for="dateScore">Date · 20 %</label><input id="dateScore" type="number" min="0" max="100" value="0" /></div>
+              </div>
+              <div class="score-live"><b id="score-preview">0</b><div class="meter" id="score-meter"><i style="width:0"></i></div><span class="lvl faible" id="score-lvl">FAIBLE</span></div>
+            </div>
+
+            <label for="notes">Notes</label>
+            <textarea id="notes" rows="2" maxlength="500" placeholder="Ex : sac à dos noir Eastpak, bibliothèque"></textarea>
+
+            <div class="actions">
+              <button type="submit" class="btn-primary" id="submit-btn">Ajouter</button>
+              <button type="button" class="btn-ghost" id="cancel-btn" hidden>Annuler la modification</button>
+              <button type="reset" class="btn-ghost" id="reset-btn">Vider</button>
+            </div>
+          </form>
+        </div>
+
+        <!-- Matching automatique (POST /api/matches/auto) -->
+        <div id="pane-auto" hidden>
+          <div class="card-head">
+            <div class="ico" style="background:var(--teal-soft);color:var(--teal)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></div>
+            <h2>Matching automatique</h2>
+            <div class="right"><span class="badge">AUTO</span></div>
           </div>
+          <form id="auto-form" autocomplete="off">
+            <div class="auto-grid">
+              <div class="group lost">
+                <div class="group-title">● Objet perdu</div>
+                <div class="row">
+                  <div><label>Id *</label><input name="lost.id" required value="LOST-101" /></div>
+                  <div><label>Catégorie *</label><select name="lost.category"></select></div>
+                </div>
+                <label>Description *</label><textarea name="lost.description" rows="2" required>iPhone 13 bleu coque noire perdu à la cafétéria</textarea>
+                <div class="row three">
+                  <div><label>Latitude</label><input name="lost.lat" type="number" step="any" value="36.8992" /></div>
+                  <div><label>Longitude</label><input name="lost.lng" type="number" step="any" value="10.1894" /></div>
+                  <div><label>Date *</label><input name="lost.date" type="date" value="2026-10-20" required /></div>
+                </div>
+              </div>
+              <div class="group">
+                <div class="group-title">● Objet retrouvé</div>
+                <div class="row">
+                  <div><label>Id *</label><input name="found.id" required value="FOUND-101" /></div>
+                  <div><label>Catégorie *</label><select name="found.category"></select></div>
+                </div>
+                <label>Description *</label><textarea name="found.description" rows="2" required>iPhone bleu avec coque noire trouvé cafétéria</textarea>
+                <div class="row three">
+                  <div><label>Latitude</label><input name="found.lat" type="number" step="any" value="36.9010" /></div>
+                  <div><label>Longitude</label><input name="found.lng" type="number" step="any" value="10.1900" /></div>
+                  <div><label>Date *</label><input name="found.date" type="date" value="2026-10-21" required /></div>
+                </div>
+              </div>
+            </div>
+            <div class="actions">
+              <button type="button" class="btn-ghost" id="auto-preview">Calculer le score</button>
+              <button type="submit" class="btn-teal">Créer la correspondance</button>
+            </div>
+          </form>
+          <div class="auto-result" id="auto-result"></div>
         </div>
-
-        <fieldset>
-          <legend>Critères de matching (0 – 100)</legend>
-          <div class="row">
-            <div><label for="categoryScore">Catégorie (30%)</label><input id="categoryScore" type="number" min="0" max="100" value="0" /></div>
-            <div><label for="descriptionScore">Description (30%)</label><input id="descriptionScore" type="number" min="0" max="100" value="0" /></div>
-            <div><label for="locationScore">Lieu (20%)</label><input id="locationScore" type="number" min="0" max="100" value="0" /></div>
-            <div><label for="dateScore">Date (20%)</label><input id="dateScore" type="number" min="0" max="100" value="0" /></div>
-          </div>
-          <div class="score-preview">Score estimé : <b id="score-preview">0</b> / 100</div>
-        </fieldset>
-
-        <label for="notes">Notes</label>
-        <textarea id="notes" rows="2" maxlength="500" placeholder="Ex : sac à dos noir Eastpak, bibliothèque"></textarea>
-
-        <div class="actions">
-          <button type="submit" class="btn-primary" id="submit-btn">Ajouter</button>
-          <button type="button" class="btn-ghost" id="cancel-btn" hidden>Annuler la modification</button>
-          <button type="reset" class="btn-ghost" id="reset-btn">Vider</button>
-        </div>
-      </form>
-    </section>
-
-    <!-- ===== Matching automatique (POST /api/matches/auto) ===== -->
-    <section class="card">
-      <h2>Matching automatique <span class="badge-mode">AUTO</span></h2>
-      <form id="auto-form" autocomplete="off">
-        <div class="auto-grid">
-          <fieldset style="margin:0">
-            <legend>Objet perdu</legend>
-            <label>Id *</label><input name="lost.id" required value="LOST-101" />
-            <label>Catégorie *</label><select name="lost.category"></select>
-            <label>Description *</label><textarea name="lost.description" rows="2" required>iPhone 13 bleu coque noire perdu à la cafétéria</textarea>
-            <div class="row"><div><label>Lat</label><input name="lost.lat" type="number" step="any" value="36.8992" /></div>
-              <div><label>Lng</label><input name="lost.lng" type="number" step="any" value="10.1894" /></div></div>
-            <label>Date *</label><input name="lost.date" type="date" value="2026-10-20" required />
-          </fieldset>
-          <fieldset style="margin:0">
-            <legend>Objet retrouvé</legend>
-            <label>Id *</label><input name="found.id" required value="FOUND-101" />
-            <label>Catégorie *</label><select name="found.category"></select>
-            <label>Description *</label><textarea name="found.description" rows="2" required>iPhone bleu avec coque noire trouvé cafétéria</textarea>
-            <div class="row"><div><label>Lat</label><input name="found.lat" type="number" step="any" value="36.9010" /></div>
-              <div><label>Lng</label><input name="found.lng" type="number" step="any" value="10.1900" /></div></div>
-            <label>Date *</label><input name="found.date" type="date" value="2026-10-21" required />
-          </fieldset>
-        </div>
-        <div class="actions">
-          <button type="button" class="btn-ghost" id="auto-preview">Calculer le score</button>
-          <button type="submit" class="btn-primary">Créer la correspondance</button>
-        </div>
-      </form>
-      <div class="auto-result" id="auto-result"></div>
-    </section>
+      </section>
     </div>
 
+    <!-- ===== Colonne droite : consultation ===== -->
     <div class="stack">
-      <!-- ===== Tableau de bord (métier) ===== -->
+      <!-- Recherche par id -->
       <section class="card">
-        <h2>Tableau de bord</h2>
-        <div class="kpis" id="kpis"><div class="kpi"><span>Chargement…</span></div></div>
-        <div class="sub" id="kpi-sub"></div>
-      </section>
-
-      <!-- ===== Recherche par id ===== -->
-      <section class="card">
-        <h2>Rechercher une correspondance par id</h2>
+        <div class="card-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></div>
+          <h2>Rechercher une correspondance par id</h2>
+        </div>
         <form class="search" id="search-form">
           <input id="search-id" placeholder="Ex : 6720f1c2a9b3e4d5f6a7b8c9" required />
           <button class="btn-primary" type="submit">Rechercher</button>
@@ -210,53 +368,67 @@
         <div id="result"></div>
       </section>
 
-      <!-- ===== Liste ===== -->
+      <!-- Liste -->
       <section class="card">
-        <h2>Correspondances <span class="badge-mode" id="count">0</span>
-          <button class="btn-ghost" style="margin-left:auto;padding:6px 10px;font-size:12.5px" id="refresh-btn">↻ Actualiser</button>
-        </h2>
+        <div class="card-head">
+          <div class="ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></div>
+          <h2>Correspondances</h2>
+          <span class="badge count" id="count">0</span>
+          <div class="right"><button class="btn-ghost btn-sm" id="refresh-btn">↻ Actualiser</button></div>
+        </div>
         <form class="toolbar" id="list-form">
-          <input id="list-q" placeholder="Rechercher (id d'objet, notes)…" />
+          <input id="list-q" placeholder="Rechercher un id d'objet ou une note…" />
           <select id="list-sort">
-            <option value="-score">Score ↓</option><option value="score">Score ↑</option>
+            <option value="-score">Meilleur score</option><option value="score">Score croissant</option>
             <option value="-createdAt">Plus récentes</option><option value="createdAt">Plus anciennes</option>
           </select>
           <button class="btn-primary" type="submit">Filtrer</button>
         </form>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Id</th><th>Perdu ↔ Retrouvé</th><th>Catégorie</th><th>Score</th><th>Statut</th><th>Actions</th></tr></thead>
-            <tbody id="tbody"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
+            <thead><tr><th>Id</th><th>Perdu / Retrouvé</th><th>Score</th><th>Statut</th><th></th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="5" class="empty">Chargement…</td></tr></tbody>
           </table>
         </div>
         <div class="pager">
-          <button class="btn-ghost" id="prev-btn">← Précédent</button>
+          <button class="btn-ghost btn-sm" id="prev-btn">← Précédent</button>
           <span id="page-info">Page 1 / 1</span>
-          <button class="btn-ghost" id="next-btn">Suivant →</button>
+          <button class="btn-ghost btn-sm" id="next-btn">Suivant →</button>
         </div>
       </section>
     </div>
   </main>
 
-  <div id="toast"></div>
+  <footer>WinL9it · Matching Service — Dhia Eddine Mnajja · ESPRIT</footer>
+
+  <div id="toast" role="status" aria-live="polite"></div>
 
   <script>
     const API = '/api/matches';
     const $ = (id) => document.getElementById(id);
     const WEIGHTS = { categoryScore: .3, descriptionScore: .3, locationScore: .2, dateScore: .2 };
+    const CRIT_LABELS = { categoryScore: 'Catégorie', descriptionScore: 'Description', locationScore: 'Lieu', dateScore: 'Date' };
     // Cycle de vie (identique à src/utils/workflow.js)
     const TRANSITIONS = { 'PROPOSÉ': ['CONFIRMÉ', 'REJETÉ'], 'CONFIRMÉ': ['RESTITUÉ', 'REJETÉ'], 'REJETÉ': [], 'RESTITUÉ': [] };
     const STATUS_BTN = {
       'CONFIRMÉ': { label: '✓ Confirmer', cls: 'btn-ok' },
-      'REJETÉ': { label: '✗ Rejeter', cls: 'btn-danger' },
+      'REJETÉ': { label: '✕ Rejeter', cls: 'btn-danger' },
       'RESTITUÉ': { label: '↩ Marquer restitué', cls: 'btn-purple' },
     };
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
+    // Niveau de confiance (identique à src/utils/scoring.js)
+    const level = (s) => (s >= 80 ? 'fort' : s >= 50 ? 'moyen' : 'faible');
+    const meter = (s) => `<div class="meter ${level(s)}"><i style="width:${Math.min(Math.max(s, 0), 100)}%"></i></div>`;
+    const lvlTag = (s) => `<span class="lvl ${level(s)}">${level(s).toUpperCase()}</span>`;
+    const critBars = (c, notes = {}) => Object.keys(CRIT_LABELS).map((k) => `
+      <div class="crit"><span>${CRIT_LABELS[k]}</span>${meter(c[k])}<b>${c[k]}</b>${notes[k] ? `<small>${notes[k]}</small>` : ''}</div>`).join('');
+    const emptyIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21s-7-6.6-7-12a7 7 0 0 1 14 0c0 5.4-7 12-7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>';
+
     function toast(msg, ok = true) {
       const t = $('toast');
       t.textContent = msg; t.className = (ok ? 'ok' : 'err') + ' show';
-      clearTimeout(t._h); t._h = setTimeout(() => (t.className = ''), 3000);
+      clearTimeout(t._h); t._h = setTimeout(() => (t.className = ''), 3200);
     }
 
     async function api(url, options = {}) {
@@ -266,10 +438,29 @@
       return body;
     }
 
+    // ---- Onglets
+    function switchTab(name) {
+      document.querySelectorAll('.tab').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
+      $('pane-manual').hidden = name !== 'manual';
+      $('pane-auto').hidden = name !== 'auto';
+    }
+    document.querySelectorAll('.tab').forEach((b) => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+
+    // ---- État de l'API
+    async function checkHealth() {
+      try { await api('/health'); $('health').textContent = 'API en ligne'; $('health').className = 'health up'; }
+      catch { $('health').textContent = 'API hors ligne'; $('health').className = 'health down'; }
+    }
+
     function updatePreview() {
       let s = 0;
       for (const [k, w] of Object.entries(WEIGHTS)) s += Math.min(Math.max(+$(k).value || 0, 0), 100) * w;
-      $('score-preview').textContent = Math.round(s * 100) / 100;
+      s = Math.round(s * 100) / 100;
+      $('score-preview').textContent = s;
+      $('score-meter').className = 'meter ' + level(s);
+      $('score-meter').firstElementChild.style.width = s + '%';
+      $('score-lvl').className = 'lvl ' + level(s);
+      $('score-lvl').textContent = level(s).toUpperCase();
     }
     Object.keys(WEIGHTS).forEach((k) => $(k).addEventListener('input', updatePreview));
 
@@ -288,12 +479,13 @@
       $('matchId').value = edit ? match._id : '';
       $('form-title').textContent = edit ? 'Modifier la correspondance' : 'Ajouter une correspondance';
       $('mode-badge').textContent = edit ? 'MODIFICATION' : 'AJOUT';
-      $('mode-badge').className = 'badge-mode' + (edit ? ' edit' : '');
+      $('mode-badge').className = 'badge' + (edit ? ' edit' : '');
       $('submit-btn').textContent = edit ? 'Enregistrer les modifications' : 'Ajouter';
       $('cancel-btn').hidden = !edit;
       $('reset-btn').hidden = edit;
       $('status').disabled = !edit;
       if (edit) {
+        switchTab('manual');
         ['lostItemId', 'foundItemId', 'category', 'status', 'notes'].forEach((k) => ($(k).value = match[k] ?? ''));
         Object.keys(WEIGHTS).forEach((k) => ($(k).value = match.criteria?.[k] ?? 0));
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -321,25 +513,31 @@
     // ---- Rechercher par id
     function showDetail(m) {
       $('result').innerHTML = `
-        <div class="detail"><dl>
-          <dt>Id</dt><dd>${esc(m._id)}</dd>
-          <dt>Objet perdu</dt><dd>${esc(m.lostItemId)}</dd>
-          <dt>Objet retrouvé</dt><dd>${esc(m.foundItemId)}</dd>
-          <dt>Catégorie</dt><dd>${esc(m.category)}</dd>
-          <dt>Critères</dt><dd>Cat. ${m.criteria.categoryScore} · Desc. ${m.criteria.descriptionScore} · Lieu ${m.criteria.locationScore} · Date ${m.criteria.dateScore}</dd>
-          <dt>Score</dt><dd class="score">${m.score} / 100</dd>
-          <dt>Statut</dt><dd><span class="pill s-${esc(m.status)}">${esc(m.status)}</span></dd>
-          <dt>Notes</dt><dd>${esc(m.notes) || '—'}</dd>
-          <dt>Créée le</dt><dd>${new Date(m.createdAt).toLocaleString('fr-FR')}</dd>
-        </dl>
-        <div class="actions">
-          <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
-          <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
-          ${(TRANSITIONS[m.status] || []).map((s) =>
-            `<button class="${STATUS_BTN[s].cls}" data-status="${s}" data-id="${esc(m._id)}">${STATUS_BTN[s].label}</button>`).join('')}
-        </div>
-        <div class="fb" id="hist-zone"></div>
-        <div class="fb" id="fb-zone"></div></div>`;
+        <div class="detail">
+          <div class="detail-head">
+            <div class="big-score">${m.score}<small> / 100</small></div>
+            <div class="pair"><span class="obj l">${esc(m.lostItemId)}</span><span class="obj f">${esc(m.foundItemId)}</span><small>${esc(m.category)}</small></div>
+            <div class="right">${lvlTag(m.score)}<span class="pill s-${esc(m.status)}">${esc(m.status)}</span></div>
+          </div>
+          <div class="detail-body">
+            <div>${critBars(m.criteria)}</div>
+            <dl>
+              <dt>Id</dt><dd class="mono">${esc(m._id)}</dd>
+              <dt>Notes</dt><dd>${esc(m.notes) || '—'}</dd>
+              <dt>Créée le</dt><dd>${new Date(m.createdAt).toLocaleString('fr-FR')}</dd>
+              <dt>Modifiée</dt><dd>${new Date(m.updatedAt).toLocaleString('fr-FR')}</dd>
+            </dl>
+          </div>
+          <div class="actions">
+            ${(TRANSITIONS[m.status] || []).map((s) =>
+              `<button class="${STATUS_BTN[s].cls}" data-status="${s}" data-id="${esc(m._id)}">${STATUS_BTN[s].label}</button>`).join('')}
+            <span style="flex:1"></span>
+            <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
+            <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
+          </div>
+          <div class="section" id="hist-zone"></div>
+          <div class="section" id="fb-zone"></div>
+        </div>`;
       loadHistory(m._id);
       loadFeedbacks(m);
     }
@@ -350,16 +548,20 @@
         const s = (await api(`/api/feedbacks/stats/${m._id}`)).data;
         $('fb-zone').innerHTML = `
           <h3>Avis des utilisateurs <span class="pill v-${esc(s.verdict)}">${esc(s.verdict)}</span></h3>
-          <div class="sub" style="margin:0 0 8px">${s.total} avis · ${s.positifs} 👍 / ${s.negatifs} 👎 ·
-            précision ${s.tauxPrecision} % · note moyenne ${s.noteMoyenne ?? '—'} / 5</div>
-          ${m.status === 'REJETÉ' ? '<div class="sub">Correspondance rejetée : plus d\'avis possible.</div>' : `
+          <div class="fb-stats">
+            <div><b>${s.total}</b><span>avis</span></div>
+            <div><b>${s.positifs} / ${s.negatifs}</b><span>👍 / 👎</span></div>
+            <div><b>${s.tauxPrecision} %</b><span>précision</span></div>
+            <div><b>${s.noteMoyenne ?? '—'}</b><span>note / 5</span></div>
+          </div>
+          ${m.status === 'REJETÉ' ? '<div class="hint">ⓘ Correspondance rejetée : plus d\'avis possible.</div>' : `
           <form id="fb-form" data-match="${esc(m._id)}">
             <div><label>Utilisateur</label><input name="userId" required placeholder="USER-001" /></div>
             <div><label>Avis</label><select name="isCorrect"><option value="true">C'est bien mon objet</option><option value="false">Ce n'est pas mon objet</option></select></div>
             <div><label>Note</label><select name="rating"><option>5</option><option>4</option><option>3</option><option>2</option><option>1</option></select></div>
-            <button class="btn-primary" type="submit">Donner mon avis</button>
+            <button class="btn-primary" type="submit">Envoyer</button>
           </form>
-          <div class="sub">Règle : 1 avis par utilisateur · rejet automatique si ≥ 3 avis et moins de 50 % positifs.</div>`}`;
+          <div class="hint">ⓘ 1 avis par utilisateur · rejet automatique dès 3 avis si moins de 50 % sont positifs.</div>`}`;
       } catch (err) { $('fb-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
     }
     document.addEventListener('submit', async (e) => {
@@ -376,7 +578,7 @@
     async function searchById(id) {
       $('search-id').value = id;
       try { showDetail((await api(`${API}/${encodeURIComponent(id)}`)).data); }
-      catch (err) { $('result').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+      catch (err) { $('result').innerHTML = `<p class="empty">${emptyIcon}${esc(err.message)}</p>`; }
     }
     $('search-form').addEventListener('submit', (e) => { e.preventDefault(); searchById($('search-id').value.trim()); });
 
@@ -396,32 +598,32 @@
         $('next-btn').disabled = r.page >= r.pages;
         $('tbody').innerHTML = data.length ? data.map((m) => `
           <tr>
-            <td class="id" title="Rechercher" data-search="${esc(m._id)}">…${esc(m._id.slice(-8))}</td>
-            <td>${esc(m.lostItemId)} ↔ ${esc(m.foundItemId)}</td>
-            <td>${esc(m.category)}</td>
-            <td class="score">${m.score}</td>
+            <td><span class="chip-id" title="Voir le détail" data-search="${esc(m._id)}">…${esc(m._id.slice(-6))}</span></td>
+            <td><div class="pair"><span class="obj l" title="Objet perdu">${esc(m.lostItemId)}</span><span class="obj f" title="Objet retrouvé">${esc(m.foundItemId)}</span><small>${esc(m.category)}</small></div></td>
+            <td class="score-cell"><b>${m.score}</b> ${lvlTag(m.score)}${meter(m.score)}</td>
             <td><span class="pill s-${esc(m.status)}">${esc(m.status)}</span></td>
-            <td class="row-actions">
-              <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
-              <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
-            </td>
-          </tr>`).join('') : '<tr><td colspan="6" class="empty">Aucune correspondance. Ajoutez-en une avec le formulaire.</td></tr>';
+            <td><div class="row-actions">
+              <button class="btn-edit btn-sm" data-edit="${esc(m._id)}" title="Modifier">Modifier</button>
+              <button class="btn-danger btn-sm" data-del="${esc(m._id)}" title="Supprimer">Supprimer</button>
+            </div></td>
+          </tr>`).join('') : `<tr><td colspan="5" class="empty">${emptyIcon}Aucune correspondance. Ajoutez-en une avec le formulaire ou le matching automatique.</td></tr>`;
       } catch (err) {
-        $('tbody').innerHTML = `<tr><td colspan="6" class="empty">${esc(err.message)}</td></tr>`;
+        $('tbody').innerHTML = `<tr><td colspan="5" class="empty">${esc(err.message)}</td></tr>`;
       }
     }
+
     // ---- Métier : tableau de bord
     async function loadStats() {
       try {
         const [m, f] = await Promise.all([api(`${API}/stats`), api('/api/feedbacks/stats')]);
         const s = m.data;
         $('kpis').innerHTML = [
-          [s.total, 'Correspondances'], [s.scoreMoyen, 'Score moyen'],
+          [s.total, 'Correspondances', 'accent'], [s.scoreMoyen, 'Score moyen'],
           [s.parStatut['CONFIRMÉ'], 'Confirmées'], [s.parStatut['RESTITUÉ'], 'Restituées'],
           [s.tauxRestitution + ' %', 'Taux de restitution'], [f.data.tauxPrecision + ' %', 'Précision (avis)'],
-        ].map(([v, l]) => `<div class="kpi"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
-        $('kpi-sub').textContent = `Proposées : ${s.parStatut['PROPOSÉ']} · Rejetées : ${s.parStatut['REJETÉ']} · ${f.data.total} avis utilisateurs`;
-      } catch (err) { $('kpis').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+        ].map(([v, l, cls]) => `<div class="kpi ${cls || ''}"><b>${esc(v)}</b><span>${l}</span></div>`).join('');
+        $('kpi-sub').textContent = `${s.parStatut['PROPOSÉ']} proposée(s) · ${s.parStatut['REJETÉ']} rejetée(s) · ${f.data.total} avis utilisateurs`;
+      } catch (err) { $('kpis').innerHTML = `<div class="kpi"><span>${esc(err.message)}</span></div>`; }
     }
     const refreshAll = () => { loadList(); loadStats(); };
     $('list-form').addEventListener('submit', (e) => { e.preventDefault(); page = 1; loadList(); });
@@ -443,14 +645,16 @@
       return { lost: item('lost'), found: item('found') };
     }
     function showAuto(d, details, saved) {
-      const c = d.criteria;
-      $('auto-result').innerHTML = `<div class="detail"><dl>
-        <dt>Score</dt><dd class="score">${d.score} / 100 — ${esc(d.niveau)}${saved ? ' (enregistrée)' : ' (aperçu)'}</dd>
-        <dt>Catégorie</dt><dd>${c.categoryScore} ${details.memeCategorie ? '(identique)' : '(différente)'}</dd>
-        <dt>Description</dt><dd>${c.descriptionScore} — mots communs : ${esc(details.motsCommuns.join(', ') || 'aucun')}</dd>
-        <dt>Lieu</dt><dd>${c.locationScore} — ${details.distanceKm} km</dd>
-        <dt>Date</dt><dd>${c.dateScore} — ${details.ecartJours} jour(s) d'écart</dd>
-      </dl>${saved ? `<div class="actions"><button class="btn-ghost" data-search="${esc(d._id)}">Voir la correspondance</button></div>` : ''}</div>`;
+      $('auto-result').innerHTML = `<div class="auto-card">
+        <div class="top"><div class="big-score">${d.score}<small> / 100</small></div>${lvlTag(d.score)}
+          <span class="badge ${saved ? '' : 'count'}" style="margin-left:auto">${saved ? 'ENREGISTRÉE' : 'APERÇU'}</span></div>
+        ${critBars(d.criteria, {
+          categoryScore: details.memeCategorie ? 'même catégorie' : 'catégories différentes',
+          descriptionScore: 'mots communs : ' + esc(details.motsCommuns.join(', ') || 'aucun'),
+          locationScore: `${details.distanceKm} km de distance`,
+          dateScore: `${details.ecartJours} jour(s) d'écart`,
+        })}
+        ${saved ? `<div class="actions"><button class="btn-ghost btn-sm" data-search="${esc(d._id)}">Voir la correspondance →</button></div>` : ''}</div>`;
     }
     $('auto-preview').addEventListener('click', async () => {
       try { const r = await api(`${API}/auto?preview=true`, { method: 'POST', body: JSON.stringify(readAuto()) }); showAuto(r.data, r.data.details, false); }
@@ -479,7 +683,11 @@
     document.addEventListener('click', async (e) => {
       const t = e.target.closest('[data-edit],[data-del],[data-search],[data-status]');
       if (!t) return;
-      if (t.dataset.search) return searchById(t.dataset.search);
+      if (t.dataset.search) {
+        await searchById(t.dataset.search);
+        $('result').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        return;
+      }
       if (t.dataset.status) {
         try {
           const r = await api(`${API}/${t.dataset.id}/status`, { method: 'PATCH', body: JSON.stringify({ status: t.dataset.status }) });
@@ -504,7 +712,14 @@
       }
     });
 
+    checkHealth();
+    setInterval(checkHealth, 15000);
     refreshAll();
+
+    // Liens directs : /?id=<matchId> ouvre le détail, /?tab=auto ouvre le matching automatique
+    const qs = new URLSearchParams(location.search);
+    if (qs.get('tab') === 'auto') switchTab('auto');
+    if (qs.get('id')) searchById(qs.get('id'));
   </script>
 </body>
 </html>

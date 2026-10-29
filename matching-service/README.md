@@ -1,3 +1,5 @@
+<p align="center"><img src="public/logo-full.svg" alt="WinL9it — Matching Service" width="320" /></p>
+
 # WinL9it — Matching Service
 
 Microservice **Matching Service** du projet WinL9it (ESPRIT).

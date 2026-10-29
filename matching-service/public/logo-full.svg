@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 72" role="img" aria-label="WinL9it — Matching Service">
+  <defs>
+    <linearGradient id="wl-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b3a7e"/>
+      <stop offset="1" stop-color="#12a58c"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(4 4)">
+    <rect width="64" height="64" rx="16" fill="url(#wl-bg)"/>
+    <path d="M12 21a21 21 0 0 1 9-11M52 21a21 21 0 0 0-9-11" fill="none" stroke="#ffffff" stroke-opacity=".35" stroke-width="2.5" stroke-linecap="round"/>
+    <path d="M32 55s-15-14.2-15-27a15 15 0 0 1 30 0c0 12.8-15 27-15 27z" fill="#ffffff"/>
+    <circle cx="32" cy="28" r="9.5" fill="#12a58c"/>
+    <path d="M27.4 28.3l3.2 3.2 6.2-6.6" fill="none" stroke="#ffffff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="84" y="42" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="34" font-weight="800" letter-spacing="-1" fill="#0b3a7e">Win<tspan fill="#12a58c">L9it</tspan></text>
+  <text x="86" y="62" font-family="Inter, 'Segoe UI', Roboto, Arial, sans-serif" font-size="13" font-weight="600" letter-spacing="2.4" fill="#66758a">MATCHING SERVICE</text>
+</svg>
