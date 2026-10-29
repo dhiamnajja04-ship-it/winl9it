@@ -9,7 +9,7 @@
   "tags": [
     { "name": "Matches", "description": "Correspondances objets perdus / retrouvés" },
     { "name": "Feedbacks", "description": "Retours sur les correspondances" },
-    { "name": "Matches — Métier", "description": "Cycle de vie, suggestions, tableau de bord" },
+    { "name": "Matches — Métier", "description": "Matching automatique, cycle de vie, historique, suggestions, tableau de bord" },
     { "name": "Feedbacks — Métier", "description": "Précision du matching et rejet automatique (≥ 3 avis et < 50 % positifs). Un seul avis par utilisateur et par correspondance (409)." }
   ],
   "paths": {
@@ -20,13 +20,18 @@
         "responses": { "201": { "description": "Créée" }, "400": { "description": "Données invalides" }, "409": { "description": "Doublon" } }
       },
       "get": {
-        "tags": ["Matches"], "summary": "Lister les correspondances (triées par score)",
+        "tags": ["Matches"], "summary": "Lister les correspondances (filtres, recherche, tri, pagination)",
+        "description": "Réponse : data, count (sur la page), total, page, pages, limit. L'historique n'est pas renvoyé dans la liste.",
         "parameters": [
           { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"] } },
           { "name": "category", "in": "query", "schema": { "type": "string" } },
-          { "name": "minScore", "in": "query", "schema": { "type": "number" } }
+          { "name": "minScore", "in": "query", "schema": { "type": "number" } },
+          { "name": "q", "in": "query", "description": "Recherche texte dans lostItemId, foundItemId et notes", "schema": { "type": "string" } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["-score", "score", "-createdAt", "createdAt"], "default": "-score" } },
+          { "name": "page", "in": "query", "schema": { "type": "integer", "default": 1 } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "default": 20, "maximum": 100 } }
         ],
-        "responses": { "200": { "description": "Liste" } }
+        "responses": { "200": { "description": "Liste paginée" }, "400": { "description": "Tri invalide" } }
       }
     },
     "/api/matches/{id}": {
@@ -44,8 +49,25 @@
       "patch": {
         "tags": ["Matches — Métier"], "summary": "Changer le statut (cycle de vie PROPOSÉ → CONFIRMÉ → RESTITUÉ, ou REJETÉ)",
         "description": "Transitions autorisées : PROPOSÉ → CONFIRMÉ | REJETÉ ; CONFIRMÉ → RESTITUÉ | REJETÉ. REJETÉ et RESTITUÉ sont finaux. Confirmer une correspondance rejette automatiquement les autres propositions sur le même objet perdu ou retrouvé (champ autresRejetees).",
-        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"], "example": "CONFIRMÉ" } } } } } },
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "type": "object", "required": ["status"], "properties": { "status": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"], "example": "CONFIRMÉ" }, "comment": { "type": "string", "example": "Propriétaire identifié", "description": "Enregistré dans l'historique" } } } } } },
         "responses": { "200": { "description": "Statut modifié" }, "400": { "description": "Statut invalide" }, "404": { "description": "Introuvable" }, "409": { "description": "Transition interdite ou objet déjà confirmé ailleurs" } }
+      }
+    },
+    "/api/matches/{id}/history": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": {
+        "tags": ["Matches — Métier"], "summary": "Historique des changements de statut (de, vers, date, commentaire)",
+        "description": "Alimenté à la création, par PATCH /status, par PUT, et par les rejets automatiques (proposition concurrente, avis négatifs).",
+        "responses": { "200": { "description": "Historique" }, "400": { "description": "Id invalide" }, "404": { "description": "Introuvable" } }
+      }
+    },
+    "/api/matches/auto": {
+      "post": {
+        "tags": ["Matches — Métier"], "summary": "Matching automatique : le serveur calcule les 4 critères puis crée la correspondance",
+        "description": "Catégorie : 100 si identique, sinon 0. Description : similarité des mots (coefficient de Dice, sans accents ni mots vides). Lieu : distance GPS (Haversine), 100 − 5 points par km. Date : 100 − 10 points par jour d'écart, 0 si trouvé avant d'être perdu. ?preview=true : calcule sans enregistrer.",
+        "parameters": [{ "name": "preview", "in": "query", "schema": { "type": "boolean" } }],
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AutoMatchInput" } } } },
+        "responses": { "200": { "description": "Aperçu (preview=true)" }, "201": { "description": "Créée" }, "400": { "description": "Données invalides" }, "409": { "description": "Paire déjà existante" } }
       }
     },
     "/api/matches/stats": {
@@ -119,6 +141,26 @@
             }
           },
           "status": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"] },
+          "notes": { "type": "string" }
+        }
+      },
+      "ItemInput": {
+        "type": "object",
+        "required": ["id", "category", "description", "location", "date"],
+        "properties": {
+          "id": { "type": "string", "example": "LOST-101" },
+          "category": { "type": "string", "enum": ["Accessoires", "Clés", "Électronique", "Documents", "Vêtements", "Portefeuille", "Autre"] },
+          "description": { "type": "string", "example": "iPhone 13 bleu coque noire perdu à la cafétéria" },
+          "location": { "type": "object", "properties": { "lat": { "type": "number", "example": 36.8992 }, "lng": { "type": "number", "example": 10.1894 } } },
+          "date": { "type": "string", "format": "date", "example": "2026-10-20" }
+        }
+      },
+      "AutoMatchInput": {
+        "type": "object",
+        "required": ["lost", "found"],
+        "properties": {
+          "lost": { "$ref": "#/components/schemas/ItemInput" },
+          "found": { "$ref": "#/components/schemas/ItemInput" },
           "notes": { "type": "string" }
         }
       },

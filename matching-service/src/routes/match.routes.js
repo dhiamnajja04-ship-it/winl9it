@@ -9,7 +9,9 @@ router.route('/')
 // Métier (déclarées avant /:id)
 router.get('/stats', ctrl.getStats);                              // Tableau de bord
 router.get('/suggestions/:lostItemId', ctrl.getSuggestions);      // Meilleures propositions
+router.post('/auto', ctrl.autoMatch);                             // Matching automatique
 router.patch('/:id/status', validateObjectId, ctrl.changeStatus); // Cycle de vie
+router.get('/:id/history', validateObjectId, ctrl.getHistory);    // Historique des statuts
 
 router.route('/:id')
   .all(validateObjectId)

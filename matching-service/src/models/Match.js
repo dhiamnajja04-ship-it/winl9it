@@ -39,11 +39,36 @@ const matchSchema = new mongoose.Schema(
     },
 
     notes: { type: String, trim: true, maxlength: 500 },
+
+    // Historique des changements de statut (traçabilité)
+    history: [
+      {
+        _id: false,
+        from: { type: String, default: null },
+        to: { type: String, required: true },
+        date: { type: Date, default: Date.now },
+        comment: { type: String, trim: true, maxlength: 300 },
+      },
+    ],
   },
   { timestamps: true }
 );
 
 // Une même paire perdu/retrouvé ne peut être enregistrée qu'une seule fois
 matchSchema.index({ lostItemId: 1, foundItemId: 1 }, { unique: true });
+
+// Première entrée de l'historique à la création
+matchSchema.pre('save', function (next) {
+  if (this.isNew && !this.history.length) {
+    this.history.push({ from: null, to: this.status, comment: 'Création de la correspondance' });
+  }
+  next();
+});
+
+/** Change le statut en l'enregistrant dans l'historique (sans sauvegarder) */
+matchSchema.methods.setStatus = function (to, comment) {
+  this.history.push({ from: this.status, to, comment });
+  this.status = to;
+};
 
 module.exports = mongoose.model('Match', matchSchema);

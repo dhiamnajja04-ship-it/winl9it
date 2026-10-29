@@ -2,6 +2,7 @@ const Match = require('../models/Match');
 const MatchFeedback = require('../models/MatchFeedback');
 const { computeScore, scoreLevel } = require('../utils/scoring');
 const { TRANSITIONS, STATUSES, canTransition } = require('../utils/workflow');
+const { computeCriteria, validateItem } = require('../utils/similarity');
 
 // Champs modifiables par le client (score et dates sont calculés par le serveur)
 const ALLOWED = ['lostItemId', 'foundItemId', 'category', 'criteria', 'status', 'notes'];
@@ -38,10 +39,28 @@ async function rejectConcurrentMatches(match) {
       status: 'PROPOSÉ',
       $or: [{ lostItemId: match.lostItemId }, { foundItemId: match.foundItemId }],
     },
-    { status: 'REJETÉ' }
+    {
+      $set: { status: 'REJETÉ' },
+      $push: {
+        history: {
+          from: 'PROPOSÉ',
+          to: 'REJETÉ',
+          date: new Date(),
+          comment: `Rejet automatique : objet confirmé dans la correspondance ${match._id}`,
+        },
+      },
+    }
   );
   return modifiedCount;
 }
+
+const SORTS = {
+  '-score': { score: -1, createdAt: -1 },
+  score: { score: 1, createdAt: -1 },
+  '-createdAt': { createdAt: -1 },
+  createdAt: { createdAt: 1 },
+};
+const escapeRegex = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
 /** POST /api/matches — Ajouter une correspondance */
 exports.createMatch = async (req, res, next) => {
@@ -56,17 +75,42 @@ exports.createMatch = async (req, res, next) => {
   }
 };
 
-/** GET /api/matches — Lister (filtres optionnels : status, category, minScore) */
+/**
+ * GET /api/matches — Lister avec filtres, recherche, tri et pagination
+ * ?status=&category=&minScore=&q=texte&sort=-score|score|-createdAt|createdAt&page=1&limit=20
+ */
 exports.getAllMatches = async (req, res, next) => {
   try {
     const filter = {};
     if (req.query.status) filter.status = req.query.status;
     if (req.query.category) filter.category = req.query.category;
     if (req.query.minScore) filter.score = { $gte: Number(req.query.minScore) };
+    if (req.query.q) {
+      // Recherche texte dans les ids d'objets et les notes (insensible à la casse)
+      const rx = new RegExp(escapeRegex(String(req.query.q).trim()), 'i');
+      filter.$or = [{ lostItemId: rx }, { foundItemId: rx }, { notes: rx }];
+    }
 
-    // Classement des correspondances : meilleur score en premier
-    const matches = await Match.find(filter).sort({ score: -1, createdAt: -1 });
-    res.json({ success: true, count: matches.length, data: matches });
+    const sortKey = req.query.sort || '-score'; // par défaut : meilleur score en premier
+    if (!SORTS[sortKey]) {
+      return res.status(400).json({ success: false, message: `Tri invalide (attendu : ${Object.keys(SORTS).join(', ')})` });
+    }
+    const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 20, 1), 100);
+
+    const [total, matches] = await Promise.all([
+      Match.countDocuments(filter),
+      Match.find(filter).select('-history').sort(SORTS[sortKey]).skip((page - 1) * limit).limit(limit),
+    ]);
+    res.json({
+      success: true,
+      count: matches.length,
+      total,
+      page,
+      pages: Math.max(Math.ceil(total / limit), 1),
+      limit,
+      data: matches,
+    });
   } catch (err) {
     next(err);
   }
@@ -99,6 +143,8 @@ exports.updateMatch = async (req, res, next) => {
       const error = await checkStatusChange(match, data.status);
       if (error) return res.status(409).json({ success: false, message: error });
     }
+    if (statusChanged) match.setStatus(data.status, 'Modification de la correspondance');
+    delete data.status;
     if (data.criteria) {
       // Fusion : on peut ne modifier qu'un seul critère
       data.criteria = { ...match.criteria.toObject(), ...data.criteria };
@@ -137,7 +183,7 @@ exports.deleteMatch = async (req, res, next) => {
 /** PATCH /api/matches/:id/status — Faire avancer une correspondance dans son cycle de vie */
 exports.changeStatus = async (req, res, next) => {
   try {
-    const { status } = req.body || {};
+    const { status, comment } = req.body || {};
     if (!STATUSES.includes(status)) {
       return res.status(400).json({ success: false, message: `Statut invalide (attendu : ${STATUSES.join(', ')})` });
     }
@@ -149,7 +195,7 @@ exports.changeStatus = async (req, res, next) => {
     if (error) return res.status(409).json({ success: false, message: error });
 
     const previous = match.status;
-    match.status = status;
+    match.setStatus(status, comment);
     await match.save();
     const rejected = status === 'CONFIRMÉ' ? await rejectConcurrentMatches(match) : 0;
 
@@ -192,6 +238,51 @@ exports.getStats = async (req, res, next) => {
         parCategorie: byCategory.map((c) => ({ category: c._id, count: c.count, scoreMoyen: round(c.scoreMoyen) })),
       },
     });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/**
+ * POST /api/matches/auto — Matching automatique
+ * Le serveur calcule lui-même les 4 critères à partir des deux objets puis crée la correspondance.
+ * ?preview=true : calcule seulement, sans enregistrer.
+ */
+exports.autoMatch = async (req, res, next) => {
+  try {
+    const { lost, found, notes } = req.body || {};
+    const errors = [...validateItem(lost, 'lost'), ...validateItem(found, 'found')];
+    if (errors.length) return res.status(400).json({ success: false, message: 'Données invalides', errors });
+
+    const { criteria, details } = computeCriteria(lost, found);
+    const score = computeScore(criteria);
+    const result = { criteria, score, niveau: scoreLevel(score), details };
+
+    if (req.query.preview === 'true') {
+      return res.json({ success: true, message: 'Aperçu du score (non enregistré)', data: result });
+    }
+    const match = await Match.create({
+      lostItemId: lost.id,
+      foundItemId: found.id,
+      category: lost.category,
+      criteria,
+      score,
+      notes,
+    });
+    res.status(201).json({ success: true, message: 'Correspondance calculée et ajoutée', data: match, details, niveau: result.niveau });
+  } catch (err) {
+    next(err);
+  }
+};
+
+/** GET /api/matches/:id/history — Historique des changements de statut */
+exports.getHistory = async (req, res, next) => {
+  try {
+    const match = await Match.findById(req.params.id).select('status history');
+    if (!match) {
+      return res.status(404).json({ success: false, message: 'Correspondance introuvable' });
+    }
+    res.json({ success: true, count: match.history.length, status: match.status, data: match.history });
   } catch (err) {
     next(err);
   }

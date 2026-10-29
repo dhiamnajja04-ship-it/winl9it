@@ -67,7 +67,7 @@ exports.createFeedback = async (req, res, next) => {
     const stats = await statsForMatch(match._id);
     let autoRejected = false;
     if (match.status === 'PROPOSÉ' && stats.total >= MIN_FEEDBACKS && stats.tauxPrecision < MIN_PRECISION) {
-      match.status = 'REJETÉ';
+      match.setStatus('REJETÉ', `Rejet automatique : ${stats.tauxPrecision} % d'avis positifs sur ${stats.total}`);
       await match.save();
       autoRejected = true;
     }

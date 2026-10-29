@@ -40,7 +40,7 @@ retrouvé (Found Item Service). Les objets sont référencés par leur id (`lost
 
 | Entité | CRUD | Métier |
 |---|---|---|
-| **Match** | `/api/matches` (POST, GET, GET :id, PUT, DELETE) | Score sur 4 critères (catégorie 30 %, description 30 %, lieu 20 %, date 20 %) · cycle de vie `PROPOSÉ → CONFIRMÉ → RESTITUÉ` / `REJETÉ` (`PATCH /:id/status`) · confirmer rejette les propositions concurrentes · suggestions par objet perdu · tableau de bord (`/stats`) |
+| **Match** | `/api/matches` (POST, GET, GET :id, PUT, DELETE) — liste avec recherche `q`, tri `sort`, pagination `page`/`limit` | Score sur 4 critères (catégorie 30 %, description 30 %, lieu 20 %, date 20 %) · **matching automatique** (`POST /auto` : le serveur calcule les critères depuis les descriptions, la distance GPS et les dates) · cycle de vie `PROPOSÉ → CONFIRMÉ → RESTITUÉ` / `REJETÉ` (`PATCH /:id/status`) · **historique des statuts** (`/:id/history`) · confirmer rejette les propositions concurrentes · suggestions par objet perdu · tableau de bord (`/stats`) |
 | **MatchFeedback** | `/api/feedbacks` (POST, GET, GET :id, PUT, DELETE) | 1 avis par utilisateur et par correspondance · rejet automatique si ≥ 3 avis et < 50 % positifs · fiabilité d'une correspondance (`/stats/:matchId`) · précision globale (`/stats`) |
 
 **Lancer**
@@ -54,7 +54,7 @@ npm run dev
 
 | URL | Rôle |
 |---|---|
-| http://localhost:3004 | Interface web (ajout, recherche par id, modification, suppression, tableau de bord, avis) |
+| http://localhost:3004 | Interface web (ajout, recherche par id, modification, suppression, matching automatique, liste paginée, historique, tableau de bord, avis) |
 | http://localhost:3004/api-docs | Swagger |
 | http://localhost:3004/health | Health check |
 
@@ -64,7 +64,7 @@ npm run dev
 npx newman run postman/WinL9it-Matching-Service.postman_collection.json -e postman/WinL9it-Local.postman_environment.json
 ```
 
-→ 38 requêtes, 58 assertions (CRUD + métier des 2 entités).
+→ 54 requêtes, 87 assertions (CRUD + métier des 2 entités + nouvelles API).
 
 **Pour les autres services** : le Matching Service attend les ids d'objets fournis par
 Lost Item Service et Found Item Service, et un `userId` du User Service pour les avis.

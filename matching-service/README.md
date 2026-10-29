@@ -36,6 +36,21 @@ Le même CRUD existe pour la 2ᵉ entité : `/api/feedbacks`.
 | **Exclusivité** : confirmer une correspondance rejette automatiquement les autres propositions sur le même objet perdu ou retrouvé ; un objet déjà confirmé ailleurs ne peut pas être reconfirmé (`409`) | `PATCH /api/matches/:id/status` |
 | **Suggestions** : meilleures correspondances d'un objet perdu, triées par score, avec niveau de confiance `FORT` (≥ 80) / `MOYEN` (≥ 50) / `FAIBLE` | `GET /api/matches/suggestions/:lostItemId?limit=5` |
 | **Tableau de bord** : total, score moyen, répartition par statut et par catégorie, taux de restitution | `GET /api/matches/stats` |
+| **Matching automatique** : le serveur calcule les 4 critères à partir des 2 objets (catégorie identique, mots communs des descriptions, distance GPS en km, écart en jours) puis crée la correspondance. `?preview=true` = calcul sans enregistrer | `POST /api/matches/auto` |
+| **Historique des statuts** : chaque changement (création, PATCH, PUT, rejets automatiques) est enregistré avec date et commentaire | `GET /api/matches/:id/history` |
+| **Recherche, tri, pagination** : `q` (ids, notes), `sort` (`-score`, `score`, `-createdAt`, `createdAt`), `page`, `limit` (20 par défaut, 100 max) | `GET /api/matches` |
+
+Calcul du matching automatique :
+
+| Critère | Règle |
+|---|---|
+| Catégorie | 100 si identique, sinon 0 |
+| Description | similarité des mots (coefficient de Dice), sans accents ni mots vides |
+| Lieu | distance GPS (Haversine) : 100 − 5 points par km (0 au-delà de 20 km) |
+| Date | 100 − 10 points par jour d'écart ; 0 si l'objet est « trouvé » avant d'être perdu |
+
+Exemple (`postman/` → « Match — Nouvelles API ») : iPhone perdu / trouvé à 0,21 km et 1 jour d'écart
+→ critères 100 / 91 / 99 / 90 → **score 95,1 (FORT)**.
 
 ### Entité 2 — MatchFeedback
 
@@ -47,8 +62,9 @@ Le même CRUD existe pour la 2ᵉ entité : `/api/feedbacks`.
 | **Fiabilité d'une correspondance** : nb d'avis, précision, note moyenne, verdict `FIABLE` / `MITIGÉ` / `DOUTEUX` / `INSUFFISANT` | `GET /api/feedbacks/stats/:matchId` |
 | **Précision globale du matching**, et par catégorie | `GET /api/feedbacks/stats` |
 
-Dans l'interface web : tableau de bord en haut, et dans le détail d'une correspondance
-(Rechercher par id) les boutons **Confirmer / Rejeter / Marquer restitué** et la zone **Avis des utilisateurs**.
+Dans l'interface web : tableau de bord en haut, carte **Matching automatique** (Calculer le score / Créer),
+liste avec **recherche, tri et pagination**, et dans le détail d'une correspondance (Rechercher par id)
+les boutons **Confirmer / Rejeter / Marquer restitué**, l'**historique des statuts** et la zone **Avis des utilisateurs**.
 
 ## Technologies (slide 8)
 
@@ -92,19 +108,21 @@ MONGO_URI=mongodb://localhost:27017/winl9it_matching_db
 | Méthode | URL | Action |
 |---|---|---|
 | POST | `/api/matches` | Ajouter une correspondance |
-| GET | `/api/matches` | Lister (filtres : `status`, `category`, `minScore`) |
+| GET | `/api/matches` | Lister (filtres `status`, `category`, `minScore` · recherche `q` · `sort` · `page`, `limit`) |
 | GET | `/api/matches/:id` | Rechercher par id |
 | PUT | `/api/matches/:id` | Modifier (score recalculé) |
 | DELETE | `/api/matches/:id` | Supprimer (+ ses feedbacks) |
 | POST / GET / GET :id / PUT / DELETE | `/api/feedbacks` | CRUD MatchFeedback |
-| PATCH | `/api/matches/:id/status` | Métier — changer le statut |
+| POST | `/api/matches/auto` | Métier — matching automatique (`?preview=true` : aperçu) |
+| PATCH | `/api/matches/:id/status` | Métier — changer le statut (`comment` optionnel) |
+| GET | `/api/matches/:id/history` | Métier — historique des statuts |
 | GET | `/api/matches/suggestions/:lostItemId` | Métier — suggestions |
 | GET | `/api/matches/stats` | Métier — tableau de bord |
 | GET | `/api/feedbacks/stats` | Métier — précision globale |
 | GET | `/api/feedbacks/stats/:matchId` | Métier — fiabilité d'une correspondance |
 
-La collection Postman contient 5 dossiers (Health, CRUD Match, CRUD MatchFeedback,
-Match — Métier, MatchFeedback — Métier) : **38 requêtes, 58 assertions**.
+La collection Postman contient 6 dossiers (Health, CRUD Match, CRUD MatchFeedback,
+Match — Métier, MatchFeedback — Métier, Match — Nouvelles API) : **54 requêtes, 87 assertions**.
 
 Exemple de corps pour l'ajout :
 ```json
@@ -135,6 +153,7 @@ matching-service/
     ├── routes/
     ├── middlewares/           # Validation d'id, gestion des erreurs
     ├── utils/scoring.js       # Calcul du score + niveau de confiance
+    ├── utils/similarity.js    # Matching automatique (texte, distance GPS, dates)
     ├── utils/workflow.js      # Cycle de vie (transitions autorisées)
     └── docs/swagger.json
 ```

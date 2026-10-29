@@ -78,6 +78,19 @@
     .v-MITIGÉ { background: #fff3dc; color: #a26b00; }
     .v-DOUTEUX { background: #fde8e8; color: var(--danger); }
     .v-INSUFFISANT { background: #eef3fa; color: var(--muted); }
+    .toolbar { display: flex; gap: 8px; margin-bottom: 10px; flex-wrap: wrap; }
+    .toolbar input { flex: 1; min-width: 160px; }
+    .toolbar select { width: auto; }
+    .pager { display: flex; gap: 8px; align-items: center; justify-content: flex-end; margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .pager button { padding: 6px 10px; font-size: 12.5px; }
+    .pager button:disabled { opacity: .4; cursor: default; }
+    .timeline { list-style: none; margin: 0; padding: 0 0 0 14px; border-left: 2px solid var(--line); font-size: 13px; }
+    .timeline li { margin: 0 0 8px; position: relative; }
+    .timeline li::before { content: ''; position: absolute; left: -20px; top: 5px; width: 10px; height: 10px; border-radius: 50%; background: var(--blue); }
+    .timeline small { color: var(--muted); display: block; }
+    .auto-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 500px) { .auto-grid { grid-template-columns: 1fr; } }
+    .auto-result { margin-top: 12px; }
   </style>
 </head>
 <body>
@@ -88,6 +101,7 @@
   </header>
 
   <main>
+    <div class="stack">
     <!-- ===== Formulaire Ajout / Modification ===== -->
     <section class="card">
       <h2>
@@ -145,6 +159,39 @@
       </form>
     </section>
 
+    <!-- ===== Matching automatique (POST /api/matches/auto) ===== -->
+    <section class="card">
+      <h2>Matching automatique <span class="badge-mode">AUTO</span></h2>
+      <form id="auto-form" autocomplete="off">
+        <div class="auto-grid">
+          <fieldset style="margin:0">
+            <legend>Objet perdu</legend>
+            <label>Id *</label><input name="lost.id" required value="LOST-101" />
+            <label>Catégorie *</label><select name="lost.category"></select>
+            <label>Description *</label><textarea name="lost.description" rows="2" required>iPhone 13 bleu coque noire perdu à la cafétéria</textarea>
+            <div class="row"><div><label>Lat</label><input name="lost.lat" type="number" step="any" value="36.8992" /></div>
+              <div><label>Lng</label><input name="lost.lng" type="number" step="any" value="10.1894" /></div></div>
+            <label>Date *</label><input name="lost.date" type="date" value="2026-10-20" required />
+          </fieldset>
+          <fieldset style="margin:0">
+            <legend>Objet retrouvé</legend>
+            <label>Id *</label><input name="found.id" required value="FOUND-101" />
+            <label>Catégorie *</label><select name="found.category"></select>
+            <label>Description *</label><textarea name="found.description" rows="2" required>iPhone bleu avec coque noire trouvé cafétéria</textarea>
+            <div class="row"><div><label>Lat</label><input name="found.lat" type="number" step="any" value="36.9010" /></div>
+              <div><label>Lng</label><input name="found.lng" type="number" step="any" value="10.1900" /></div></div>
+            <label>Date *</label><input name="found.date" type="date" value="2026-10-21" required />
+          </fieldset>
+        </div>
+        <div class="actions">
+          <button type="button" class="btn-ghost" id="auto-preview">Calculer le score</button>
+          <button type="submit" class="btn-primary">Créer la correspondance</button>
+        </div>
+      </form>
+      <div class="auto-result" id="auto-result"></div>
+    </section>
+    </div>
+
     <div class="stack">
       <!-- ===== Tableau de bord (métier) ===== -->
       <section class="card">
@@ -168,11 +215,24 @@
         <h2>Correspondances <span class="badge-mode" id="count">0</span>
           <button class="btn-ghost" style="margin-left:auto;padding:6px 10px;font-size:12.5px" id="refresh-btn">↻ Actualiser</button>
         </h2>
+        <form class="toolbar" id="list-form">
+          <input id="list-q" placeholder="Rechercher (id d'objet, notes)…" />
+          <select id="list-sort">
+            <option value="-score">Score ↓</option><option value="score">Score ↑</option>
+            <option value="-createdAt">Plus récentes</option><option value="createdAt">Plus anciennes</option>
+          </select>
+          <button class="btn-primary" type="submit">Filtrer</button>
+        </form>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Id</th><th>Perdu ↔ Retrouvé</th><th>Catégorie</th><th>Score</th><th>Statut</th><th>Actions</th></tr></thead>
             <tbody id="tbody"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
           </table>
+        </div>
+        <div class="pager">
+          <button class="btn-ghost" id="prev-btn">← Précédent</button>
+          <span id="page-info">Page 1 / 1</span>
+          <button class="btn-ghost" id="next-btn">Suivant →</button>
         </div>
       </section>
     </div>
@@ -278,7 +338,9 @@
           ${(TRANSITIONS[m.status] || []).map((s) =>
             `<button class="${STATUS_BTN[s].cls}" data-status="${s}" data-id="${esc(m._id)}">${STATUS_BTN[s].label}</button>`).join('')}
         </div>
+        <div class="fb" id="hist-zone"></div>
         <div class="fb" id="fb-zone"></div></div>`;
+      loadHistory(m._id);
       loadFeedbacks(m);
     }
 
@@ -318,11 +380,20 @@
     }
     $('search-form').addEventListener('submit', (e) => { e.preventDefault(); searchById($('search-id').value.trim()); });
 
-    // ---- Lister
+    // ---- Lister (recherche, tri, pagination)
+    let page = 1;
+    const PAGE_SIZE = 8;
     async function loadList() {
       try {
-        const { data, count } = await api(API);
-        $('count').textContent = count;
+        const params = new URLSearchParams({ page, limit: PAGE_SIZE, sort: $('list-sort').value });
+        if ($('list-q').value.trim()) params.set('q', $('list-q').value.trim());
+        const r = await api(`${API}?${params}`);
+        if (page > r.pages) { page = r.pages; return loadList(); }
+        const { data } = r;
+        $('count').textContent = r.total;
+        $('page-info').textContent = `Page ${r.page} / ${r.pages}`;
+        $('prev-btn').disabled = r.page <= 1;
+        $('next-btn').disabled = r.page >= r.pages;
         $('tbody').innerHTML = data.length ? data.map((m) => `
           <tr>
             <td class="id" title="Rechercher" data-search="${esc(m._id)}">…${esc(m._id.slice(-8))}</td>
@@ -353,6 +424,55 @@
       } catch (err) { $('kpis').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
     }
     const refreshAll = () => { loadList(); loadStats(); };
+    $('list-form').addEventListener('submit', (e) => { e.preventDefault(); page = 1; loadList(); });
+    $('list-sort').addEventListener('change', () => { page = 1; loadList(); });
+    $('prev-btn').addEventListener('click', () => { page--; loadList(); });
+    $('next-btn').addEventListener('click', () => { page++; loadList(); });
+
+    // ---- Matching automatique
+    const CATEGORIES = ['Accessoires', 'Clés', 'Électronique', 'Documents', 'Vêtements', 'Portefeuille', 'Autre'];
+    document.querySelectorAll('#auto-form select').forEach((s) => {
+      s.innerHTML = CATEGORIES.map((c) => `<option${c === 'Électronique' ? ' selected' : ''}>${c}</option>`).join('');
+    });
+    function readAuto() {
+      const f = $('auto-form').elements;
+      const item = (k) => ({
+        id: f[`${k}.id`].value.trim(), category: f[`${k}.category`].value, description: f[`${k}.description`].value.trim(),
+        location: { lat: parseFloat(f[`${k}.lat`].value), lng: parseFloat(f[`${k}.lng`].value) }, date: f[`${k}.date`].value,
+      });
+      return { lost: item('lost'), found: item('found') };
+    }
+    function showAuto(d, details, saved) {
+      const c = d.criteria;
+      $('auto-result').innerHTML = `<div class="detail"><dl>
+        <dt>Score</dt><dd class="score">${d.score} / 100 — ${esc(d.niveau)}${saved ? ' (enregistrée)' : ' (aperçu)'}</dd>
+        <dt>Catégorie</dt><dd>${c.categoryScore} ${details.memeCategorie ? '(identique)' : '(différente)'}</dd>
+        <dt>Description</dt><dd>${c.descriptionScore} — mots communs : ${esc(details.motsCommuns.join(', ') || 'aucun')}</dd>
+        <dt>Lieu</dt><dd>${c.locationScore} — ${details.distanceKm} km</dd>
+        <dt>Date</dt><dd>${c.dateScore} — ${details.ecartJours} jour(s) d'écart</dd>
+      </dl>${saved ? `<div class="actions"><button class="btn-ghost" data-search="${esc(d._id)}">Voir la correspondance</button></div>` : ''}</div>`;
+    }
+    $('auto-preview').addEventListener('click', async () => {
+      try { const r = await api(`${API}/auto?preview=true`, { method: 'POST', body: JSON.stringify(readAuto()) }); showAuto(r.data, r.data.details, false); }
+      catch (err) { toast(err.message, false); }
+    });
+    $('auto-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      try {
+        const r = await api(`${API}/auto`, { method: 'POST', body: JSON.stringify(readAuto()) });
+        toast(r.message); showAuto({ ...r.data, niveau: r.niveau }, r.details, true); refreshAll();
+      } catch (err) { toast(err.message, false); }
+    });
+
+    // ---- Historique des statuts de la correspondance affichée
+    async function loadHistory(id) {
+      try {
+        const r = await api(`${API}/${id}/history`);
+        $('hist-zone').innerHTML = `<h3>Historique des statuts</h3><ul class="timeline">${r.data.map((h) => `
+          <li>${h.from ? `<span class="pill s-${esc(h.from)}">${esc(h.from)}</span> → ` : ''}<span class="pill s-${esc(h.to)}">${esc(h.to)}</span>
+            <small>${new Date(h.date).toLocaleString('fr-FR')}${h.comment ? ' — ' + esc(h.comment) : ''}</small></li>`).join('')}</ul>`;
+      } catch (err) { $('hist-zone').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+    }
     $('refresh-btn').addEventListener('click', refreshAll);
 
     // ---- Modifier / Supprimer / Changer le statut (délégation d'événements)

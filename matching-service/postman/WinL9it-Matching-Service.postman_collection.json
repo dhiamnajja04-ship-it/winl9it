@@ -1491,6 +1491,666 @@
           ]
         }
       ]
+    },
+    {
+      "name": "Match — Nouvelles API",
+      "description": "Matching automatique (POST /api/matches/auto), historique des statuts (GET /api/matches/:id/history), pagination + recherche + tri (GET /api/matches?q=&page=&limit=&sort=).",
+      "item": [
+        {
+          "name": "1. Matching auto — aperçu (non enregistré)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/auto?preview=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "auto"
+              ],
+              "query": [
+                {
+                  "key": "preview",
+                  "value": "true"
+                }
+              ]
+            },
+            "description": "Le serveur calcule les 4 critères : catégorie identique, similarité des mots de la description, distance GPS (Haversine), écart en jours.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lost\": {\n    \"id\": \"{{autoRef}}-LOST\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone 13 bleu coque noire perdu à la cafétéria\",\n    \"location\": {\n      \"lat\": 36.8992,\n      \"lng\": 10.1894\n    },\n    \"date\": \"2026-10-20\"\n  },\n  \"found\": {\n    \"id\": \"{{autoRef}}-FOUND\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone bleu avec coque noire trouvé cafétéria\",\n    \"location\": {\n      \"lat\": 36.901,\n      \"lng\": 10.19\n    },\n    \"date\": \"2026-10-21\"\n  },\n  \"notes\": \"Matching automatique — démo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.environment.set(\"autoRef\", \"AUTO-\" + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test(\"Critères calculés 100 / 91 / 99 / 90\", () => pm.expect(d.criteria).to.eql({ categoryScore: 100, descriptionScore: 91, locationScore: 99, dateScore: 90 }));",
+                  "pm.test(\"Score 95.1, niveau FORT\", () => { pm.expect(d.score).to.eql(95.1); pm.expect(d.niveau).to.eql(\"FORT\"); });",
+                  "pm.test(\"Détails : 0.21 km, 1 jour, mots communs\", () => { pm.expect(d.details.distanceKm).to.eql(0.21); pm.expect(d.details.ecartJours).to.eql(1); pm.expect(d.details.motsCommuns).to.include(\"iphone\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2. Matching auto — enregistrer",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/auto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "auto"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lost\": {\n    \"id\": \"{{autoRef}}-LOST\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone 13 bleu coque noire perdu à la cafétéria\",\n    \"location\": {\n      \"lat\": 36.8992,\n      \"lng\": 10.1894\n    },\n    \"date\": \"2026-10-20\"\n  },\n  \"found\": {\n    \"id\": \"{{autoRef}}-FOUND\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone bleu avec coque noire trouvé cafétéria\",\n    \"location\": {\n      \"lat\": 36.901,\n      \"lng\": 10.19\n    },\n    \"date\": \"2026-10-21\"\n  },\n  \"notes\": \"Matching automatique — démo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"Correspondance créée avec le score calculé\", () => { pm.expect(r.data.score).to.eql(95.1); pm.expect(r.data.lostItemId).to.eql(pm.environment.get(\"autoRef\") + \"-LOST\"); });",
+                  "pm.environment.set(\"matchAuto\", r.data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3. Matching auto — même paire → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/auto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "auto"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lost\": {\n    \"id\": \"{{autoRef}}-LOST\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone 13 bleu coque noire perdu à la cafétéria\",\n    \"location\": {\n      \"lat\": 36.8992,\n      \"lng\": 10.1894\n    },\n    \"date\": \"2026-10-20\"\n  },\n  \"found\": {\n    \"id\": \"{{autoRef}}-FOUND\",\n    \"category\": \"Électronique\",\n    \"description\": \"iPhone bleu avec coque noire trouvé cafétéria\",\n    \"location\": {\n      \"lat\": 36.901,\n      \"lng\": 10.19\n    },\n    \"date\": \"2026-10-21\"\n  },\n  \"notes\": \"Matching automatique — démo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "4. Matching auto — données manquantes → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/auto",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "auto"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lost\": {\n    \"id\": \"X\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Liste des erreurs\", () => pm.expect(pm.response.json().errors).to.be.an(\"array\").that.is.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5. Confirmer avec un commentaire",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/{{matchAuto}}/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "{{matchAuto}}",
+                "status"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"CONFIRMÉ\",\n  \"comment\": \"Propriétaire identifié par le numéro IMEI\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6. Historique des statuts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/{{matchAuto}}/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "{{matchAuto}}",
+                "history"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"2 entrées\", () => pm.expect(r.count).to.eql(2));",
+                  "pm.test(\"Création : null → PROPOSÉ\", () => { pm.expect(r.data[0].from).to.eql(null); pm.expect(r.data[0].to).to.eql(\"PROPOSÉ\"); });",
+                  "pm.test(\"PROPOSÉ → CONFIRMÉ avec commentaire\", () => { pm.expect(r.data[1]).to.include({ from: \"PROPOSÉ\", to: \"CONFIRMÉ\", comment: \"Propriétaire identifié par le numéro IMEI\" }); pm.expect(r.data[1].date).to.be.a(\"string\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "7. Historique — id inconnu → 404",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/000000000000000000000000/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "000000000000000000000000",
+                "history"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "8. Préparer : 2e correspondance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lostItemId\": \"{{autoRef}}-LOST2\",\n  \"foundItemId\": \"{{autoRef}}-F2\",\n  \"category\": \"Autre\",\n  \"criteria\": {\n    \"categoryScore\": 50,\n    \"descriptionScore\": 50,\n    \"locationScore\": 50,\n    \"dateScore\": 50\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "pm.environment.set(\"matchP2\", pm.response.json().data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "9. Préparer : 3e correspondance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ]
+            },
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"lostItemId\": \"{{autoRef}}-LOST3\",\n  \"foundItemId\": \"{{autoRef}}-F3\",\n  \"category\": \"Autre\",\n  \"criteria\": {\n    \"categoryScore\": 20,\n    \"descriptionScore\": 20,\n    \"locationScore\": 20,\n    \"dateScore\": 20\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 201\", () => pm.response.to.have.status(201));",
+                  "pm.environment.set(\"matchP3\", pm.response.json().data._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "10. Recherche + pagination (page 1, 2 par page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches?q={{autoRef}}&limit=2&page=1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{autoRef}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test(\"2 résultats sur 3, 2 pages\", () => { pm.expect(r.count).to.eql(2); pm.expect(r.total).to.eql(3); pm.expect(r.pages).to.eql(2); });",
+                  "pm.test(\"Triés par score décroissant\", () => pm.expect(r.data[0].score).to.be.at.least(r.data[1].score));",
+                  "pm.test(\"Historique non renvoyé dans la liste\", () => pm.expect(r.data[0]).to.not.have.property(\"history\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "11. Recherche + pagination (page 2)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches?q={{autoRef}}&limit=2&page=2",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{autoRef}}"
+                },
+                {
+                  "key": "limit",
+                  "value": "2"
+                },
+                {
+                  "key": "page",
+                  "value": "2"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"1 résultat sur la page 2\", () => pm.expect(pm.response.json().count).to.eql(1));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "12. Tri par date de création",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches?q={{autoRef}}&sort=createdAt",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{autoRef}}"
+                },
+                {
+                  "key": "sort",
+                  "value": "createdAt"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La plus ancienne en premier\", () => pm.expect(pm.response.json().data[0]._id).to.eql(pm.environment.get(\"matchAuto\")));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "13. Tri invalide → 400",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches?sort=prix",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "prix"
+                }
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "14. Nettoyer : supprimer la correspondance auto",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/{{matchAuto}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "{{matchAuto}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "15. Nettoyer : supprimer la 2e",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/{{matchP2}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "{{matchP2}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "16. Nettoyer : supprimer la 3e",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/matches/{{matchP3}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "matches",
+                "{{matchP3}}"
+              ]
+            },
+            "description": ""
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Statut 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     }
   ]
 }
