@@ -1,0 +1,98 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "WinL9it — Matching Service",
+    "version": "1.0.0",
+    "description": "CRUD des correspondances (Match) entre objets perdus et retrouvés, et des retours utilisateurs (MatchFeedback). Responsable : Dhia Eddine Mnajja."
+  },
+  "servers": [{ "url": "http://localhost:3004" }],
+  "tags": [
+    { "name": "Matches", "description": "Correspondances objets perdus / retrouvés" },
+    { "name": "Feedbacks", "description": "Retours sur les correspondances" }
+  ],
+  "paths": {
+    "/api/matches": {
+      "post": {
+        "tags": ["Matches"], "summary": "Ajouter une correspondance",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MatchInput" } } } },
+        "responses": { "201": { "description": "Créée" }, "400": { "description": "Données invalides" }, "409": { "description": "Doublon" } }
+      },
+      "get": {
+        "tags": ["Matches"], "summary": "Lister les correspondances (triées par score)",
+        "parameters": [
+          { "name": "status", "in": "query", "schema": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"] } },
+          { "name": "category", "in": "query", "schema": { "type": "string" } },
+          { "name": "minScore", "in": "query", "schema": { "type": "number" } }
+        ],
+        "responses": { "200": { "description": "Liste" } }
+      }
+    },
+    "/api/matches/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "tags": ["Matches"], "summary": "Rechercher une correspondance par id", "responses": { "200": { "description": "Trouvée" }, "400": { "description": "Id invalide" }, "404": { "description": "Introuvable" } } },
+      "put": {
+        "tags": ["Matches"], "summary": "Modifier une correspondance (score recalculé)",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/MatchInput" } } } },
+        "responses": { "200": { "description": "Modifiée" }, "404": { "description": "Introuvable" } }
+      },
+      "delete": { "tags": ["Matches"], "summary": "Supprimer une correspondance", "responses": { "200": { "description": "Supprimée" }, "404": { "description": "Introuvable" } } }
+    },
+    "/api/feedbacks": {
+      "post": {
+        "tags": ["Feedbacks"], "summary": "Ajouter un feedback",
+        "requestBody": { "required": true, "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FeedbackInput" } } } },
+        "responses": { "201": { "description": "Créé" } }
+      },
+      "get": {
+        "tags": ["Feedbacks"], "summary": "Lister les feedbacks",
+        "parameters": [{ "name": "matchId", "in": "query", "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "Liste" } }
+      }
+    },
+    "/api/feedbacks/{id}": {
+      "parameters": [{ "name": "id", "in": "path", "required": true, "schema": { "type": "string" } }],
+      "get": { "tags": ["Feedbacks"], "summary": "Rechercher un feedback par id", "responses": { "200": { "description": "Trouvé" } } },
+      "put": {
+        "tags": ["Feedbacks"], "summary": "Modifier un feedback",
+        "requestBody": { "content": { "application/json": { "schema": { "$ref": "#/components/schemas/FeedbackInput" } } } },
+        "responses": { "200": { "description": "Modifié" } }
+      },
+      "delete": { "tags": ["Feedbacks"], "summary": "Supprimer un feedback", "responses": { "200": { "description": "Supprimé" } } }
+    }
+  },
+  "components": {
+    "schemas": {
+      "MatchInput": {
+        "type": "object",
+        "required": ["lostItemId", "foundItemId", "category"],
+        "properties": {
+          "lostItemId": { "type": "string", "example": "LOST-001" },
+          "foundItemId": { "type": "string", "example": "FOUND-001" },
+          "category": { "type": "string", "enum": ["Accessoires", "Clés", "Électronique", "Documents", "Vêtements", "Portefeuille", "Autre"] },
+          "criteria": {
+            "type": "object",
+            "properties": {
+              "categoryScore": { "type": "number", "example": 100 },
+              "descriptionScore": { "type": "number", "example": 80 },
+              "locationScore": { "type": "number", "example": 90 },
+              "dateScore": { "type": "number", "example": 70 }
+            }
+          },
+          "status": { "type": "string", "enum": ["PROPOSÉ", "CONFIRMÉ", "REJETÉ", "RESTITUÉ"] },
+          "notes": { "type": "string" }
+        }
+      },
+      "FeedbackInput": {
+        "type": "object",
+        "required": ["matchId", "userId", "isCorrect"],
+        "properties": {
+          "matchId": { "type": "string" },
+          "userId": { "type": "string", "example": "USER-001" },
+          "isCorrect": { "type": "boolean" },
+          "rating": { "type": "integer", "minimum": 1, "maximum": 5 },
+          "comment": { "type": "string" }
+        }
+      }
+    }
+  }
+}

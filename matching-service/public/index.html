@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>WinL9it — Matching Service</title>
+  <style>
+    :root {
+      --navy: #0b3a7e; --blue: #1a73e8; --teal: #16a394; --bg: #f3f7fd;
+      --card: #ffffff; --line: #dde6f3; --text: #1d2a3d; --muted: #66758a;
+      --danger: #d93a3a; --warn: #e8a21a;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+    header { background: var(--navy); color: #fff; padding: 18px 24px; display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+    header h1 { margin: 0; font-size: 26px; letter-spacing: -.5px; }
+    header h1 span { color: #5fd3c4; }
+    header p { margin: 0; opacity: .8; font-size: 14px; }
+    header a { color: #bfe1ff; margin-left: auto; font-size: 14px; }
+    main { max-width: 1150px; margin: 24px auto; padding: 0 16px; display: grid; grid-template-columns: 380px 1fr; gap: 20px; }
+    @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px; box-shadow: 0 2px 8px rgba(11,58,126,.05); }
+    .card h2 { margin: 0 0 14px; font-size: 17px; color: var(--navy); display: flex; align-items: center; gap: 8px; }
+    .badge-mode { font-size: 11px; padding: 3px 8px; border-radius: 99px; background: #e4f6f3; color: var(--teal); font-weight: 600; }
+    .badge-mode.edit { background: #fff3dc; color: #a26b00; }
+    label { display: block; font-size: 13px; font-weight: 600; margin: 10px 0 4px; color: var(--muted); }
+    input, select, textarea { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 8px; font: inherit; font-size: 14px; background: #fff; }
+    input:focus, select:focus, textarea:focus { outline: 2px solid #b7d3fb; border-color: var(--blue); }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    fieldset { border: 1px dashed var(--line); border-radius: 10px; padding: 4px 12px 12px; margin: 12px 0 0; }
+    legend { font-size: 12px; font-weight: 700; color: var(--teal); padding: 0 6px; }
+    .score-preview { margin-top: 10px; font-size: 13px; color: var(--muted); }
+    .score-preview b { color: var(--navy); font-size: 16px; }
+    button { font: inherit; font-size: 14px; border: 0; border-radius: 8px; padding: 9px 14px; cursor: pointer; font-weight: 600; }
+    .btn-primary { background: var(--blue); color: #fff; }
+    .btn-ghost { background: #eef3fa; color: var(--navy); }
+    .btn-danger { background: #fde8e8; color: var(--danger); }
+    .btn-edit { background: #fff3dc; color: #a26b00; }
+    .actions { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
+    .search { display: flex; gap: 8px; }
+    .search input { flex: 1; }
+    table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+    th { text-align: left; color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .4px; padding: 8px; border-bottom: 2px solid var(--line); }
+    td { padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+    td.id { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted); cursor: pointer; }
+    td.id:hover { color: var(--blue); }
+    .table-wrap { overflow-x: auto; }
+    .score { font-weight: 700; }
+    .pill { padding: 3px 9px; border-radius: 99px; font-size: 11.5px; font-weight: 700; white-space: nowrap; }
+    .s-PROPOSÉ { background: #e7f0fe; color: var(--blue); }
+    .s-CONFIRMÉ { background: #e4f6f3; color: var(--teal); }
+    .s-REJETÉ { background: #fde8e8; color: var(--danger); }
+    .s-RESTITUÉ { background: #ece9fb; color: #5b45c7; }
+    .row-actions { display: flex; gap: 6px; }
+    .row-actions button { padding: 6px 10px; font-size: 12.5px; }
+    #result { margin-top: 12px; }
+    .detail { background: #f7faff; border: 1px solid var(--line); border-radius: 10px; padding: 12px; font-size: 13.5px; }
+    .detail dl { display: grid; grid-template-columns: 130px 1fr; gap: 6px 10px; margin: 0; }
+    .detail dt { color: var(--muted); font-weight: 600; }
+    .detail dd { margin: 0; word-break: break-all; }
+    .empty { color: var(--muted); text-align: center; padding: 22px; }
+    #toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 16px; border-radius: 10px; color: #fff; font-weight: 600; font-size: 14px; opacity: 0; transform: translateY(10px); transition: .25s; max-width: 380px; z-index: 10; }
+    #toast.show { opacity: 1; transform: none; }
+    #toast.ok { background: var(--teal); } #toast.err { background: var(--danger); }
+    .stack { display: grid; gap: 20px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Win<span>L9it</span></h1>
+    <p>Matching Service — gestion des correspondances objets perdus / retrouvés</p>
+    <a href="/api-docs" target="_blank">Swagger API ↗</a>
+  </header>
+
+  <main>
+    <!-- ===== Formulaire Ajout / Modification ===== -->
+    <section class="card">
+      <h2>
+        <span id="form-title">Ajouter une correspondance</span>
+        <span id="mode-badge" class="badge-mode">AJOUT</span>
+      </h2>
+      <form id="match-form" autocomplete="off">
+        <input type="hidden" id="matchId" />
+        <div class="row">
+          <div>
+            <label for="lostItemId">Id objet perdu *</label>
+            <input id="lostItemId" required placeholder="LOST-001" />
+          </div>
+          <div>
+            <label for="foundItemId">Id objet retrouvé *</label>
+            <input id="foundItemId" required placeholder="FOUND-001" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="category">Catégorie *</label>
+            <select id="category" required>
+              <option>Accessoires</option><option>Clés</option><option>Électronique</option>
+              <option>Documents</option><option>Vêtements</option><option>Portefeuille</option><option>Autre</option>
+            </select>
+          </div>
+          <div>
+            <label for="status">Statut</label>
+            <select id="status">
+              <option>PROPOSÉ</option><option>CONFIRMÉ</option><option>REJETÉ</option><option>RESTITUÉ</option>
+            </select>
+          </div>
+        </div>
+
+        <fieldset>
+          <legend>Critères de matching (0 – 100)</legend>
+          <div class="row">
+            <div><label for="categoryScore">Catégorie (30%)</label><input id="categoryScore" type="number" min="0" max="100" value="0" /></div>
+            <div><label for="descriptionScore">Description (30%)</label><input id="descriptionScore" type="number" min="0" max="100" value="0" /></div>
+            <div><label for="locationScore">Lieu (20%)</label><input id="locationScore" type="number" min="0" max="100" value="0" /></div>
+            <div><label for="dateScore">Date (20%)</label><input id="dateScore" type="number" min="0" max="100" value="0" /></div>
+          </div>
+          <div class="score-preview">Score estimé : <b id="score-preview">0</b> / 100</div>
+        </fieldset>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" rows="2" maxlength="500" placeholder="Ex : sac à dos noir Eastpak, bibliothèque"></textarea>
+
+        <div class="actions">
+          <button type="submit" class="btn-primary" id="submit-btn">Ajouter</button>
+          <button type="button" class="btn-ghost" id="cancel-btn" hidden>Annuler la modification</button>
+          <button type="reset" class="btn-ghost" id="reset-btn">Vider</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="stack">
+      <!-- ===== Recherche par id ===== -->
+      <section class="card">
+        <h2>Rechercher une correspondance par id</h2>
+        <form class="search" id="search-form">
+          <input id="search-id" placeholder="Ex : 6720f1c2a9b3e4d5f6a7b8c9" required />
+          <button class="btn-primary" type="submit">Rechercher</button>
+        </form>
+        <div id="result"></div>
+      </section>
+
+      <!-- ===== Liste ===== -->
+      <section class="card">
+        <h2>Correspondances <span class="badge-mode" id="count">0</span>
+          <button class="btn-ghost" style="margin-left:auto;padding:6px 10px;font-size:12.5px" id="refresh-btn">↻ Actualiser</button>
+        </h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Id</th><th>Perdu ↔ Retrouvé</th><th>Catégorie</th><th>Score</th><th>Statut</th><th>Actions</th></tr></thead>
+            <tbody id="tbody"><tr><td colspan="6" class="empty">Chargement…</td></tr></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast"></div>
+
+  <script>
+    const API = '/api/matches';
+    const $ = (id) => document.getElementById(id);
+    const WEIGHTS = { categoryScore: .3, descriptionScore: .3, locationScore: .2, dateScore: .2 };
+    const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    function toast(msg, ok = true) {
+      const t = $('toast');
+      t.textContent = msg; t.className = (ok ? 'ok' : 'err') + ' show';
+      clearTimeout(t._h); t._h = setTimeout(() => (t.className = ''), 3000);
+    }
+
+    async function api(url, options = {}) {
+      const res = await fetch(url, { headers: { 'Content-Type': 'application/json' }, ...options });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error((body.errors && body.errors.join(' • ')) || body.message || `Erreur ${res.status}`);
+      return body;
+    }
+
+    function updatePreview() {
+      let s = 0;
+      for (const [k, w] of Object.entries(WEIGHTS)) s += Math.min(Math.max(+$(k).value || 0, 0), 100) * w;
+      $('score-preview').textContent = Math.round(s * 100) / 100;
+    }
+    Object.keys(WEIGHTS).forEach((k) => $(k).addEventListener('input', updatePreview));
+
+    function readForm() {
+      return {
+        lostItemId: $('lostItemId').value.trim(),
+        foundItemId: $('foundItemId').value.trim(),
+        category: $('category').value,
+        status: $('status').value,
+        notes: $('notes').value.trim(),
+        criteria: Object.fromEntries(Object.keys(WEIGHTS).map((k) => [k, +$(k).value || 0])),
+      };
+    }
+
+    function setMode(edit, match) {
+      $('matchId').value = edit ? match._id : '';
+      $('form-title').textContent = edit ? 'Modifier la correspondance' : 'Ajouter une correspondance';
+      $('mode-badge').textContent = edit ? 'MODIFICATION' : 'AJOUT';
+      $('mode-badge').className = 'badge-mode' + (edit ? ' edit' : '');
+      $('submit-btn').textContent = edit ? 'Enregistrer les modifications' : 'Ajouter';
+      $('cancel-btn').hidden = !edit;
+      $('reset-btn').hidden = edit;
+      if (edit) {
+        ['lostItemId', 'foundItemId', 'category', 'status', 'notes'].forEach((k) => ($(k).value = match[k] ?? ''));
+        Object.keys(WEIGHTS).forEach((k) => ($(k).value = match.criteria?.[k] ?? 0));
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        $('match-form').reset();
+      }
+      updatePreview();
+    }
+
+    // ---- Ajouter / Modifier
+    $('match-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const id = $('matchId').value;
+      try {
+        const r = await api(id ? `${API}/${id}` : API, { method: id ? 'PUT' : 'POST', body: JSON.stringify(readForm()) });
+        toast(r.message);
+        setMode(false);
+        loadList();
+        if ($('search-id').value === r.data._id) showDetail(r.data);
+      } catch (err) { toast(err.message, false); }
+    });
+    $('cancel-btn').addEventListener('click', () => setMode(false));
+    $('reset-btn').addEventListener('click', () => setTimeout(updatePreview));
+
+    // ---- Rechercher par id
+    function showDetail(m) {
+      $('result').innerHTML = `
+        <div class="detail"><dl>
+          <dt>Id</dt><dd>${esc(m._id)}</dd>
+          <dt>Objet perdu</dt><dd>${esc(m.lostItemId)}</dd>
+          <dt>Objet retrouvé</dt><dd>${esc(m.foundItemId)}</dd>
+          <dt>Catégorie</dt><dd>${esc(m.category)}</dd>
+          <dt>Critères</dt><dd>Cat. ${m.criteria.categoryScore} · Desc. ${m.criteria.descriptionScore} · Lieu ${m.criteria.locationScore} · Date ${m.criteria.dateScore}</dd>
+          <dt>Score</dt><dd class="score">${m.score} / 100</dd>
+          <dt>Statut</dt><dd><span class="pill s-${esc(m.status)}">${esc(m.status)}</span></dd>
+          <dt>Notes</dt><dd>${esc(m.notes) || '—'}</dd>
+          <dt>Créée le</dt><dd>${new Date(m.createdAt).toLocaleString('fr-FR')}</dd>
+        </dl>
+        <div class="actions">
+          <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
+          <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
+        </div></div>`;
+    }
+    async function searchById(id) {
+      $('search-id').value = id;
+      try { showDetail((await api(`${API}/${encodeURIComponent(id)}`)).data); }
+      catch (err) { $('result').innerHTML = `<p class="empty">${esc(err.message)}</p>`; }
+    }
+    $('search-form').addEventListener('submit', (e) => { e.preventDefault(); searchById($('search-id').value.trim()); });
+
+    // ---- Lister
+    async function loadList() {
+      try {
+        const { data, count } = await api(API);
+        $('count').textContent = count;
+        $('tbody').innerHTML = data.length ? data.map((m) => `
+          <tr>
+            <td class="id" title="Rechercher" data-search="${esc(m._id)}">…${esc(m._id.slice(-8))}</td>
+            <td>${esc(m.lostItemId)} ↔ ${esc(m.foundItemId)}</td>
+            <td>${esc(m.category)}</td>
+            <td class="score">${m.score}</td>
+            <td><span class="pill s-${esc(m.status)}">${esc(m.status)}</span></td>
+            <td class="row-actions">
+              <button class="btn-edit" data-edit="${esc(m._id)}">Modifier</button>
+              <button class="btn-danger" data-del="${esc(m._id)}">Supprimer</button>
+            </td>
+          </tr>`).join('') : '<tr><td colspan="6" class="empty">Aucune correspondance. Ajoutez-en une avec le formulaire.</td></tr>';
+      } catch (err) {
+        $('tbody').innerHTML = `<tr><td colspan="6" class="empty">${esc(err.message)}</td></tr>`;
+      }
+    }
+    $('refresh-btn').addEventListener('click', loadList);
+
+    // ---- Modifier / Supprimer (délégation d'événements)
+    document.addEventListener('click', async (e) => {
+      const t = e.target.closest('[data-edit],[data-del],[data-search]');
+      if (!t) return;
+      if (t.dataset.search) return searchById(t.dataset.search);
+      if (t.dataset.edit) {
+        try { setMode(true, (await api(`${API}/${t.dataset.edit}`)).data); }
+        catch (err) { toast(err.message, false); }
+        return;
+      }
+      if (t.dataset.del && confirm('Supprimer définitivement cette correspondance ?')) {
+        try {
+          const r = await api(`${API}/${t.dataset.del}`, { method: 'DELETE' });
+          toast(r.message);
+          if ($('matchId').value === t.dataset.del) setMode(false);
+          if ($('search-id').value === t.dataset.del) $('result').innerHTML = '';
+          loadList();
+        } catch (err) { toast(err.message, false); }
+      }
+    });
+
+    loadList();
+  </script>
+</body>
+</html>
